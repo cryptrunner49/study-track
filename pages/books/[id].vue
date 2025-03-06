@@ -1,39 +1,29 @@
 <template>
     <div>
-        <h1 class="text-3xl font-bold mb-4">{{ book.title }}</h1>
-        <p class="mb-2">Author: {{ book.author }}</p>
-        <p class="mb-2">Total Pages: {{ book.totalPages }}</p>
-        <p class="mb-2">Current Chapter: {{ book.currentChapter }}</p>
-        <p class="mb-8">Current Page: {{ book.currentPage }}</p>
-        <h2 class="text-2xl font-bold mb-4">Update Progress</h2>
-        <form @submit.prevent="updateProgress" class="space-y-4 mb-8">
+        <h1 class="text-2xl font-bold mb-4 dark:text-white">{{ book.title }}</h1>
+        <form @submit.prevent="updateBook" class="space-y-4">
             <div>
-                <label for="currentChapter" class="block text-gray-700 dark:text-gray-300">Current Chapter</label>
-                <input id="currentChapter" v-model="currentChapter" type="text"
+                <label for="title" class="block text-gray-700 dark:text-gray-300">Title</label>
+                <input id="title" v-model="book.title" type="text"
+                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" required />
+            </div>
+            <div>
+                <label for="author" class="block text-gray-700 dark:text-gray-300">Author</label>
+                <input id="author" v-model="book.author" type="text"
                     class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" />
             </div>
             <div>
-                <label for="currentPage" class="block text-gray-700 dark:text-gray-300">Current Page</label>
-                <input id="currentPage" v-model="currentPage" type="number"
-                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" />
+                <label for="total_pages" class="block text-gray-700 dark:text-gray-300">Total Pages</label>
+                <input id="total_pages" v-model.number="book.total_pages" type="number"
+                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" required />
             </div>
-            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            <div>
+                <label for="current_page" class="block text-gray-700 dark:text-gray-300">Current Page</label>
+                <input id="current_page" v-model.number="book.current_page" type="number"
+                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" required />
+            </div>
+            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                 Update
-            </button>
-        </form>
-        <h2 class="text-2xl font-bold mb-4">Notes</h2>
-        <ul class="mb-8">
-            <li v-for="note in notes" :key="note.noteId" class="mb-2">{{ note.content }}</li>
-        </ul>
-        <h2 class="text-2xl font-bold mb-4">Add Note</h2>
-        <form @submit.prevent="addNote" class="space-y-4">
-            <div>
-                <label for="noteContent" class="block text-gray-700 dark:text-gray-300">Note Content</label>
-                <textarea id="noteContent" v-model="noteContent"
-                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"></textarea>
-            </div>
-            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Add Note
             </button>
         </form>
         <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
@@ -44,52 +34,33 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'nuxt/app';
 
+//definePageMeta({ layout: 'default' });
 definePageMeta({
     middleware: ['auth'],
 });
 
 const route = useRoute();
 const book = ref({});
-const notes = ref([]);
-const currentChapter = ref('');
-const currentPage = ref(0);
-const noteContent = ref('');
 const error = ref('');
 
 onMounted(async () => {
-    const id = route.params.id;
     try {
-        book.value = await $fetch(`/api/books/${id}`);
-        notes.value = await $fetch(`/api/notes?bookId=${id}`);
-        currentChapter.value = book.value.currentChapter;
-        currentPage.value = book.value.currentPage;
+        book.value = await $fetch(`/api/books/${route.params.id}`);
     } catch (err) {
-        error.value = 'Failed to load book details: ' + err.message;
+        error.value = 'Failed to load book: ' + err.message;
     }
 });
 
-async function updateProgress() {
+async function updateBook() {
     try {
         const updatedBook = await $fetch(`/api/books/${route.params.id}`, {
             method: 'PUT',
-            body: { currentChapter: currentChapter.value, currentPage: currentPage.value },
+            body: book.value,
         });
         book.value = updatedBook;
+        error.value = '';
     } catch (err) {
-        error.value = 'Failed to update progress: ' + err.message;
-    }
-}
-
-async function addNote() {
-    try {
-        const newNote = await $fetch('/api/notes', {
-            method: 'POST',
-            body: { content: noteContent.value, bookId: route.params.id },
-        });
-        notes.value.push(newNote);
-        noteContent.value = '';
-    } catch (err) {
-        error.value = 'Failed to add note: ' + err.message;
+        error.value = 'Failed to update book: ' + err.message;
     }
 }
 </script>

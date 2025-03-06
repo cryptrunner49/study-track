@@ -4,7 +4,6 @@
       <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
         <div class="flex space-x-4">
           <NuxtLink to="/" class="hover:text-blue-500">Home</NuxtLink>
-          <NuxtLink to="/dashboard" class="hover:text-blue-500">Dashboard</NuxtLink>
           <NuxtLink to="/study-plans" class="hover:text-blue-500">Study Plans</NuxtLink>
           <NuxtLink to="/books" class="hover:text-blue-500">Books</NuxtLink>
           <NuxtLink to="/other-content" class="hover:text-blue-500">Other Content</NuxtLink>

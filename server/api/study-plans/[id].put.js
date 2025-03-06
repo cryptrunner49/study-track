@@ -1,4 +1,4 @@
-import db from '~/server/db';
+import db from '../../db';
 import { defineEventHandler, readBody, getRouterParam } from 'h3';
 import { getCurrentUser } from '~/server/utils/auth';
 

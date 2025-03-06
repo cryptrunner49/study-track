@@ -1,7 +1,7 @@
 <template>
     <div>
-        <h1 class="text-3xl font-bold mb-8">Study Plans</h1>
-        <table class="w-full table-auto">
+        <h1 class="text-2xl font-bold mb-4 dark:text-white">Study Plans</h1>
+        <table class="w-full table-auto mb-8">
             <thead>
                 <tr class="bg-gray-200 dark:bg-gray-700">
                     <th class="px-4 py-2">Title</th>
@@ -10,26 +10,27 @@
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="plan in studyPlans" :key="plan.planId" class="border-b dark:border-gray-600">
-                    <td class="px-4 py-2">{{ plan.title }}</td>
-                    <td class="px-4 py-2">{{ plan.description }}</td>
+                <tr v-for="plan in studyPlans" :key="plan.id" class="border-b dark:border-gray-600">
+                    <td class="px-4 py-2 dark:text-white">{{ plan.title }}</td>
+                    <td class="px-4 py-2 dark:text-white">{{ plan.description }}</td>
                     <td class="px-4 py-2">
-                        <NuxtLink :to="`/study-plans/${plan.planId}`" class="text-blue-500 hover:underline">View
-                        </NuxtLink>
+                        <NuxtLink :to="`/study-plans/${plan.id}`" class="text-blue-500 hover:underline">View</NuxtLink>
+                        <button @click="deleteStudyPlan(plan.id)"
+                            class="text-red-500 hover:underline ml-2">Delete</button>
                     </td>
                 </tr>
             </tbody>
         </table>
-        <h2 class="text-2xl font-bold mt-8 mb-4">Create New Study Plan</h2>
+        <h2 class="text-xl font-bold mb-4 dark:text-white">Create New Study Plan</h2>
         <form @submit.prevent="createStudyPlan" class="space-y-4">
             <div>
                 <label for="title" class="block text-gray-700 dark:text-gray-300">Title</label>
-                <input id="title" v-model="title" type="text"
+                <input id="title" v-model="newPlan.title" type="text"
                     class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" required />
             </div>
             <div>
                 <label for="description" class="block text-gray-700 dark:text-gray-300">Description</label>
-                <textarea id="description" v-model="description"
+                <textarea id="description" v-model="newPlan.description"
                     class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white"></textarea>
             </div>
             <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
@@ -42,39 +43,45 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useUserStore } from '~/stores/user';
 
+//definePageMeta({ layout: 'default' });
 definePageMeta({
     middleware: ['auth'],
 });
 
 const studyPlans = ref([]);
-const title = ref('');
-const description = ref('');
+const newPlan = ref({ title: '', description: '' });
 const error = ref('');
-const userStore = useUserStore();
 
 onMounted(async () => {
-    if (userStore.user) {
-        try {
-            studyPlans.value = await $fetch('/api/study-plans');
-        } catch (err) {
-            error.value = 'Failed to load study plans: ' + err.message;
-        }
+    try {
+        studyPlans.value = await $fetch('/api/study-plans');
+    } catch (err) {
+        error.value = 'Failed to load study plans: ' + err.message;
     }
 });
 
 async function createStudyPlan() {
     try {
-        const newPlan = await $fetch('/api/study-plans', {
+        const createdPlan = await $fetch('/api/study-plans', {
             method: 'POST',
-            body: { title: title.value, description: description.value },
+            body: newPlan.value,
         });
-        studyPlans.value.push(newPlan);
-        title.value = '';
-        description.value = '';
+        studyPlans.value.push(createdPlan);
+        newPlan.value = { title: '', description: '' };
+        error.value = '';
     } catch (err) {
         error.value = 'Failed to create study plan: ' + err.message;
+    }
+}
+
+async function deleteStudyPlan(id) {
+    try {
+        await $fetch(`/api/study-plans/${id}`, { method: 'DELETE' });
+        studyPlans.value = studyPlans.value.filter(plan => plan.id !== id);
+        error.value = '';
+    } catch (err) {
+        error.value = 'Failed to delete study plan: ' + err.message;
     }
 }
 </script>

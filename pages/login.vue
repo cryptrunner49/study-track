@@ -38,7 +38,7 @@ async function login() {
             body: { email: email.value, password: password.value },
         });
         userStore.setUser(response);
-        router.push('/dashboard');
+        router.push('/');
     } catch (err) {
         error.value = 'Login failed: ' + err.message;
     }
