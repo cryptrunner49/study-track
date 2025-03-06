@@ -92,13 +92,11 @@ const db = new sqlite3.Database('./studytrack.db', sqlite3.OPEN_READWRITE | sqli
           content TEXT NOT NULL,
           createdDate TEXT NOT NULL,
           bookId INTEGER,
-          chapter TEXT,
-          page INTEGER,
           planId INTEGER,
           contentId INTEGER,
-          FOREIGN KEY (bookId) REFERENCES Books(bookId),
-          FOREIGN KEY (planId) REFERENCES StudyPlans(planId),
-          FOREIGN KEY (contentId) REFERENCES OtherContent(contentId)
+          FOREIGN KEY (bookId) REFERENCES Books(bookId) ON DELETE CASCADE,
+          FOREIGN KEY (planId) REFERENCES StudyPlans(planId) ON DELETE CASCADE,
+          FOREIGN KEY (contentId) REFERENCES OtherContent(contentId) ON DELETE CASCADE
         )
       `);
 
