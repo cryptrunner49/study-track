@@ -1,27 +1,34 @@
 <template>
-    <div class="flex flex-col items-center justify-center min-h-screen">
-        <h1 class="text-3xl font-bold mb-8">Register</h1>
-        <form @submit.prevent="register" class="w-full max-w-sm">
-            <div class="mb-4">
-                <label for="name" class="block text-gray-700 dark:text-gray-300">Name</label>
-                <input id="name" v-model="name" type="text"
-                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" required />
+    <div class="flex items-center justify-center min-h-screen">
+        <form @submit.prevent="register" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md w-full max-w-md">
+            <h1 class="text-3xl font-bold mb-6 dark:text-white">Register</h1>
+            <div class="space-y-4">
+                <div>
+                    <label for="name" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Name</label>
+                    <input id="name" v-model="name" type="text"
+                        class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                        required />
+                </div>
+                <div>
+                    <label for="email" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Email</label>
+                    <input id="email" v-model="email" type="email"
+                        class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                        required />
+                </div>
+                <div>
+                    <label for="password"
+                        class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Password</label>
+                    <input id="password" v-model="password" type="password"
+                        class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                        required />
+                </div>
+                <button type="submit"
+                    class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition duration-200">
+                    Register
+                </button>
             </div>
-            <div class="mb-4">
-                <label for="email" class="block text-gray-700 dark:text-gray-300">Email</label>
-                <input id="email" v-model="email" type="email"
-                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" required />
-            </div>
-            <div class="mb-6">
-                <label for="password" class="block text-gray-700 dark:text-gray-300">Password</label>
-                <input id="password" v-model="password" type="password"
-                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" required />
-            </div>
-            <button type="submit" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                Register
-            </button>
+            <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
         </form>
-        <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
     </div>
 </template>
 
@@ -42,11 +49,13 @@ async function register() {
         const response = await $fetch('/api/register', {
             method: 'POST',
             body: { name: name.value, email: email.value, password: password.value },
+            credentials: 'include', // Ensure cookies are sent if needed later
         });
         userStore.setUser(response);
-        router.push('/dashboard');
+        router.push('/');
     } catch (err) {
-        error.value = 'Registration failed: ' + err.message;
+        // Display server-provided error message or fallback to generic
+        error.value = err.data?.statusMessage || 'Registration failed: An unexpected error occurred';
     }
 }
 </script>

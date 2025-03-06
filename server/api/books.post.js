@@ -2,28 +2,28 @@
 import db from '../db';
 
 export default defineEventHandler(async (event) => {
-    const { study_plan_id, title, author, total_pages } = await readBody(event);
+    const { planId, title, author, totalPages } = await readBody(event);
 
     // Basic validation
-    if (!study_plan_id || !title || !total_pages) {
+    if (!planId || !title || !totalPages) {
         throw createError({
             statusCode: 400,
-            statusMessage: 'Missing required fields: study_plan_id, title, and total_pages are required',
+            statusMessage: 'Missing required fields: planId, title, and totalPages are required',
         });
     }
 
     return new Promise((resolve, reject) => {
         db.run(
-            'INSERT INTO books (study_plan_id, title, author, total_pages) VALUES (?, ?, ?, ?)',
-            [study_plan_id, title, author, total_pages],
+            'INSERT INTO Books (planId, title, author, totalPages) VALUES (?, ?, ?, ?)',
+            [planId, title, author, totalPages],
             function (err) {
                 if (err) {
-                    console.error('Database error:', err.message); // Log the error for debugging
+                    console.error('Database error:', err.message);
                     if (err.message.includes('FOREIGN KEY constraint failed')) {
                         reject(
                             createError({
                                 statusCode: 400,
-                                statusMessage: 'Invalid study_plan_id: No matching study plan exists',
+                                statusMessage: 'Invalid planId: No matching study plan exists',
                             })
                         );
                     } else {
@@ -36,12 +36,12 @@ export default defineEventHandler(async (event) => {
                     }
                 } else {
                     resolve({
-                        id: this.lastID,
-                        study_plan_id,
+                        bookId: this.lastID,
+                        planId,
                         title,
                         author,
-                        total_pages,
-                        current_page: 0, // Default value from schema
+                        totalPages,
+                        currentPage: 0, // Default value from schema
                     });
                 }
             }

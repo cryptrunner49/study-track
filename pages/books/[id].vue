@@ -1,32 +1,40 @@
 <template>
-    <div>
-        <h1 class="text-2xl font-bold mb-4 dark:text-white">{{ book.title }}</h1>
-        <form @submit.prevent="updateBook" class="space-y-4">
-            <div>
-                <label for="title" class="block text-gray-700 dark:text-gray-300">Title</label>
-                <input id="title" v-model="book.title" type="text"
-                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" required />
-            </div>
-            <div>
-                <label for="author" class="block text-gray-700 dark:text-gray-300">Author</label>
-                <input id="author" v-model="book.author" type="text"
-                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" />
-            </div>
-            <div>
-                <label for="total_pages" class="block text-gray-700 dark:text-gray-300">Total Pages</label>
-                <input id="total_pages" v-model.number="book.total_pages" type="number"
-                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" required />
-            </div>
-            <div>
-                <label for="current_page" class="block text-gray-700 dark:text-gray-300">Current Page</label>
-                <input id="current_page" v-model.number="book.current_page" type="number"
-                    class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white" required />
-            </div>
-            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                Update
-            </button>
-        </form>
-        <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
+    <div class="py-8">
+        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+            <h1 class="text-3xl font-bold mb-6 dark:text-white">{{ book.title }}</h1>
+            <form @submit.prevent="updateBook" class="space-y-6">
+                <div>
+                    <label for="title" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Title</label>
+                    <input id="title" v-model="book.title" type="text"
+                        class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                        required />
+                </div>
+                <div>
+                    <label for="author" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Author</label>
+                    <input id="author" v-model="book.author" type="text"
+                        class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500" />
+                </div>
+                <div>
+                    <label for="total_pages" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Total
+                        Pages</label>
+                    <input id="total_pages" v-model.number="book.totalPages" type="number"
+                        class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                        required />
+                </div>
+                <div>
+                    <label for="current_page" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Current
+                        Page</label>
+                    <input id="current_page" v-model.number="book.currentPage" type="number"
+                        class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                        required />
+                </div>
+                <button type="submit"
+                    class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition duration-200">
+                    Update Book
+                </button>
+            </form>
+            <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
+        </div>
     </div>
 </template>
 
@@ -34,7 +42,6 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'nuxt/app';
 
-//definePageMeta({ layout: 'default' });
 definePageMeta({
     middleware: ['auth'],
 });
@@ -55,7 +62,12 @@ async function updateBook() {
     try {
         const updatedBook = await $fetch(`/api/books/${route.params.id}`, {
             method: 'PUT',
-            body: book.value,
+            body: {
+                title: book.value.title,
+                author: book.value.author || null,
+                totalPages: Number(book.value.totalPages),
+                currentPage: Number(book.value.currentPage),
+            },
         });
         book.value = updatedBook;
         error.value = '';
