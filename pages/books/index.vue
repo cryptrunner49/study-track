@@ -19,11 +19,14 @@
                         <td class="px-6 py-4 dark:text-white">{{ book.title }}</td>
                         <td class="px-6 py-4 dark:text-white">{{ book.author || 'Unknown' }}</td>
                         <td class="px-6 py-4 dark:text-white">{{ book.currentPage || 0 }} / {{ book.totalPages }}</td>
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 space-x-4">
                             <NuxtLink :to="`/books/${book.bookId}`" class="text-blue-500 hover:underline">View
                             </NuxtLink>
+                            <NuxtLink :to="`/books/reading-plan/${book.bookId}`" class="text-blue-500 hover:underline">
+                                {{ book.hasReadingPlan ? 'Edit Reading Plan' : 'Add Reading Plan' }}
+                            </NuxtLink>
                             <button @click="deleteBook(book.bookId)"
-                                class="text-red-500 hover:underline ml-4">Delete</button>
+                                class="text-red-500 hover:underline">Delete</button>
                         </td>
                     </tr>
                     <tr v-if="books.length === 0">
@@ -91,10 +94,17 @@ const error = ref('');
 
 onMounted(async () => {
     try {
-        books.value = await $fetch('/api/books');
-        studyPlans.value = await $fetch('/api/study-plans');
+        const fetchedBooks = await $fetch('/api/books', { credentials: 'include' });
+        // Fetch reading plan existence for each book
+        books.value = await Promise.all(
+            fetchedBooks.map(async (book) => {
+                const plan = await $fetch(`/api/reading-plan/${book.bookId}`, { credentials: 'include' }).catch(() => null);
+                return { ...book, hasReadingPlan: !!plan?.readingPlanId };
+            })
+        );
+        studyPlans.value = await $fetch('/api/study-plans', { credentials: 'include' });
     } catch (err) {
-        error.value = 'Failed to load data: ' + err.message;
+        error.value = 'Failed to load data: ' + (err.data?.statusMessage || err.message);
     }
 });
 
@@ -108,8 +118,9 @@ async function createBook() {
                 author: newBook.value.author || null, // Allow null if empty
                 totalPages: Number(newBook.value.totalPages), // Ensure number type
             },
+            credentials: 'include',
         });
-        books.value.push(createdBook);
+        books.value.push({ ...createdBook, hasReadingPlan: false });
         newBook.value = { planId: '', title: '', author: '', totalPages: '' };
         error.value = '';
     } catch (err) {
@@ -119,11 +130,11 @@ async function createBook() {
 
 async function deleteBook(id) {
     try {
-        await $fetch(`/api/books/${id}`, { method: 'DELETE' });
+        await $fetch(`/api/books/${id}`, { method: 'DELETE', credentials: 'include' });
         books.value = books.value.filter((book) => book.bookId !== id);
         error.value = '';
     } catch (err) {
-        error.value = 'Failed to delete book: ' + err.message;
+        error.value = 'Failed to delete book: ' + (err.data?.statusMessage || err.message);
     }
 }
 </script>

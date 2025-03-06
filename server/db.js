@@ -101,6 +101,24 @@ const db = new sqlite3.Database('./studytrack.db', sqlite3.OPEN_READWRITE | sqli
           FOREIGN KEY (contentId) REFERENCES OtherContent(contentId)
         )
       `);
+
+      // ReadingPlans table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS ReadingPlans (
+          readingPlanId INTEGER PRIMARY KEY AUTOINCREMENT,
+          bookId INTEGER NOT NULL,
+          hours INTEGER NOT NULL,
+          minutes INTEGER NOT NULL,
+          monday INTEGER NOT NULL DEFAULT 0,
+          tuesday INTEGER NOT NULL DEFAULT 0,
+          wednesday INTEGER NOT NULL DEFAULT 0,
+          thursday INTEGER NOT NULL DEFAULT 0,
+          friday INTEGER NOT NULL DEFAULT 0,
+          saturday INTEGER NOT NULL DEFAULT 0,
+          sunday INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (bookId) REFERENCES Books(bookId)
+        )
+      `);
     });
   }
 });
