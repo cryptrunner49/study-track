@@ -132,6 +132,8 @@ import Heading from '@tiptap/extension-heading';
 import CodeBlock from '@tiptap/extension-code-block';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
+import Prism from 'prismjs';
+import 'prismjs/themes/prism-okaidia.css'; // Dark theme for Prism.js
 
 definePageMeta({
     middleware: ['auth'],
@@ -145,31 +147,58 @@ const otherContent = ref([]);
 const newNote = ref({ type: 'book', id: '', content: '' });
 const error = ref('');
 
-// TipTap Editor setup with Notion-like features
+// Custom CodeBlock extension with Prism.js highlighting
+const CustomCodeBlock = CodeBlock.extend({
+    addNodeView() {
+        return ({ node }) => {
+            const pre = document.createElement('pre');
+            const code = document.createElement('code');
+            pre.appendChild(code);
+
+            // Highlight code with Prism.js
+            code.textContent = node.textContent;
+            code.className = 'language-javascript'; // Default to JavaScript; extend for more languages if needed
+            Prism.highlightElement(code);
+
+            return {
+                dom: pre,
+                contentDOM: code,
+                update: (updatedNode) => {
+                    if (updatedNode.type !== this.type) return false;
+                    code.textContent = updatedNode.textContent;
+                    Prism.highlightElement(code);
+                    return true;
+                },
+            };
+        };
+    },
+});
+
+// TipTap Editor setup with Prism.js highlighting
 const editor = new Editor({
     content: '',
     extensions: [
-        StarterKit,
-        Heading.configure({ levels: [1, 2, 3] }), // H1, H2, H3 like Notion
-        CodeBlock, // Code blocks
-        TextAlign.configure({ types: ['heading', 'paragraph'] }), // Alignment
+        StarterKit.configure({
+            codeBlock: false, // Disable default CodeBlock
+        }),
+        Heading.configure({ levels: [1, 2, 3] }),
+        CustomCodeBlock, // Use custom Prism.js code block
+        TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Placeholder.configure({
             placeholder: 'Type / for commands or start writing...',
-        }), // Notion-like placeholder
+        }),
     ],
     onUpdate: ({ editor }) => {
         newNote.value.content = editor.getHTML();
     },
 });
 
-// Cleanup editor on unmount
 onBeforeUnmount(() => {
     if (editor) {
         editor.destroy();
     }
 });
 
-// Computed property for association label
 const associationLabel = computed(() => {
     if (newNote.value.type === 'plan') return 'Study Plan';
     if (newNote.value.type === 'book') return 'Book';
@@ -207,7 +236,6 @@ onMounted(async () => {
     }
 });
 
-// Create a new note
 async function createNote() {
     if (!newNote.value.type || !newNote.value.id || !newNote.value.content) {
         error.value = 'All fields are required';
@@ -237,7 +265,6 @@ async function createNote() {
     }
 }
 
-// Delete a note
 async function deleteNote(noteId) {
     try {
         console.log('Deleting note:', noteId);
@@ -250,7 +277,6 @@ async function deleteNote(noteId) {
     }
 }
 
-// Helper functions
 function getPlanTitle(planId) {
     const plan = studyPlans.value.find((p) => p.planId === planId);
     return plan ? plan.title : 'N/A';
@@ -279,7 +305,6 @@ function formatDate(dateStr) {
 </script>
 
 <style>
-/* Notion-like TipTap editor styles */
 .tiptap {
     @apply w-full min-h-[150px] p-4 dark:bg-gray-800 dark:text-gray-200 focus:outline-none;
 }
