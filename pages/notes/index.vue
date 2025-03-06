@@ -78,9 +78,9 @@
                 </div>
                 <div>
                     <label for="content" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
-                        Note Content
+                        Note Editor
                     </label>
-                    <div id="mdEditor" class="relative w-full border rounded dark:border-gray-600">
+                    <div class="relative w-full border rounded dark:border-gray-600">
                         <BubbleMenu :editor="editor" :tippy-options="{ duration: 100 }"
                             class="bg-white dark:bg-gray-700 border dark:border-gray-600 rounded shadow-md p-1 flex space-x-1">
                             <button @click="editor.chain().focus().toggleBold().run()"
@@ -129,11 +129,16 @@ import VueMarkdown from 'vue3-markdown-it';
 import { Editor, EditorContent, BubbleMenu } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import Heading from '@tiptap/extension-heading';
-import CodeBlock from '@tiptap/extension-code-block';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
-import Prism from 'prismjs';
-import 'prismjs/themes/prism-okaidia.css'; // Dark theme for Prism.js
+import { createLowlight } from 'lowlight';
+import javascript from 'highlight.js/lib/languages/javascript';
+import 'highlight.js/styles/github-dark.css'; // Dark theme for Highlight.js
+
+// Initialize lowlight with Highlight.js
+const lowlight = createLowlight();
+lowlight.register('javascript', javascript);
 
 definePageMeta({
     middleware: ['auth'],
@@ -147,48 +152,7 @@ const otherContent = ref([]);
 const newNote = ref({ type: 'book', id: '', content: '' });
 const error = ref('');
 
-// Custom CodeBlock extension with real-time Prism.js highlighting
-const CustomCodeBlock = CodeBlock.extend({
-    addNodeView() {
-        return ({ node }) => {
-            const pre = document.createElement('pre');
-            let code = document.createElement('code');
-            pre.appendChild(code);
-
-            // Initial content setup
-            code.textContent = node.textContent;
-            code.className = 'language-javascript'; // Default to JavaScript
-            code.contentEditable = 'true'; // Ensure it’s editable
-            Prism.highlightElement(code);
-
-            // Real-time highlighting on input
-            /*
-            code.addEventListener('input', () => {
-                console.log("change");
-                Prism.highlightElement(code);
-            });
-            */
-            code.addEventListener('input', () => {
-                console.log("Content changed");
-            });
-
-            return {
-                dom: pre,
-                contentDOM: code,
-                update: (updatedNode) => {
-                    //if (updatedNode.type !== this.type) return false;
-                    code.textContent = updatedNode.textContent;
-                    Prism.highlightElement(code);
-                    return true;
-                },
-            };
-        };
-    },
-});
-
-
-
-// TipTap Editor setup with Prism.js highlighting
+// TipTap Editor setup with Highlight.js via CodeBlockLowlight
 const editor = new Editor({
     content: '',
     extensions: [
@@ -196,10 +160,16 @@ const editor = new Editor({
             codeBlock: false, // Disable default CodeBlock
         }),
         Heading.configure({ levels: [1, 2, 3] }),
-        CustomCodeBlock, // Use custom Prism.js code block
+        CodeBlockLowlight.configure({
+            lowlight, // Use lowlight with Highlight.js
+            defaultLanguage: 'javascript', // Default to JavaScript
+            HTMLAttributes: {
+                class: 'hljs', // Ensure Highlight.js classes are applied
+            },
+        }),
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Placeholder.configure({
-            placeholder: 'Type / for commands or start writing...',
+            placeholder: 'Write here... Markdown supported!',
         }),
     ],
     onUpdate: ({ editor }) => {
@@ -248,19 +218,6 @@ onMounted(async () => {
         console.error('Fetch error:', err);
         error.value = 'Failed to load data: ' + (err.data?.statusMessage || err.message);
     }
-
-    const mdEditor = document.getElementById('mdEditor');
-    mdEditor.addEventListener('input', () => {
-        console.log('testing');
-        let codeCollection = document.getElementsByTagName('code')
-        console.log(codeCollection);
-        if (codeCollection && codeCollection.length > 0) {
-            for (const code of codeCollection) {
-                console.log(code);
-                //Prism.highlightElement(code);
-            }
-        }
-    });
 });
 
 async function createNote() {
@@ -316,7 +273,7 @@ function getBookTitle(bookId) {
 
 function getContentTitle(contentId) {
     const content = otherContent.value.find((c) => c.contentId === contentId);
-    return content ? content.title : 'N/A'; // Fixed typo: 'contente' to 'content'
+    return content ? content.title : 'N/A';
 }
 
 function getAssociationDisplay(note) {
