@@ -78,16 +78,38 @@
                 </div>
                 <div>
                     <label for="content" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
-                        Note
+                        Note Content
                     </label>
-                    <div class="flex flex-col md:flex-row md:space-x-4">
-                        <textarea id="content" v-model="newNote.content"
-                            class="min-h-fit w-1/2 px-3 py-2 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            rows="6" required></textarea>
-                        <div
-                            class="min-h-fit w-1/2 mt-0 p-4 border rounded bg-gray-100 dark:bg-gray-900 dark:text-white">
-                            <VueMarkdown :source="newNote.content || 'Preview will appear here...'" />
-                        </div>
+                    <div class="relative w-full border rounded dark:border-gray-600">
+                        <BubbleMenu :editor="editor" :tippy-options="{ duration: 100 }"
+                            class="bg-white dark:bg-gray-700 border dark:border-gray-600 rounded shadow-md p-1 flex space-x-1">
+                            <button @click="editor.chain().focus().toggleBold().run()"
+                                :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('bold') }"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
+                                <strong>B</strong>
+                            </button>
+                            <button @click="editor.chain().focus().toggleItalic().run()"
+                                :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('italic') }"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
+                                <em>I</em>
+                            </button>
+                            <button @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
+                                :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('heading', { level: 1 }) }"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
+                                H1
+                            </button>
+                            <button @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
+                                :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('heading', { level: 2 }) }"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
+                                H2
+                            </button>
+                            <button @click="editor.chain().focus().toggleCodeBlock().run()"
+                                :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('codeBlock') }"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
+                                <code>Code</code>
+                            </button>
+                        </BubbleMenu>
+                        <EditorContent :editor="editor" class="tiptap" />
                     </div>
                 </div>
                 <button type="submit"
@@ -101,9 +123,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
 import { useUserStore } from '~/stores/user';
 import VueMarkdown from 'vue3-markdown-it';
+import { Editor, EditorContent, BubbleMenu } from '@tiptap/vue-3';
+import StarterKit from '@tiptap/starter-kit';
+import Heading from '@tiptap/extension-heading';
+import CodeBlock from '@tiptap/extension-code-block';
+import TextAlign from '@tiptap/extension-text-align';
+import Placeholder from '@tiptap/extension-placeholder';
 
 definePageMeta({
     middleware: ['auth'],
@@ -114,14 +142,38 @@ const notes = ref([]);
 const studyPlans = ref([]);
 const books = ref([]);
 const otherContent = ref([]);
-const newNote = ref({ type: 'book', id: '', content: '' }); // Default to 'book'
+const newNote = ref({ type: 'book', id: '', content: '' });
 const error = ref('');
+
+// TipTap Editor setup with Notion-like features
+const editor = new Editor({
+    content: '',
+    extensions: [
+        StarterKit,
+        Heading.configure({ levels: [1, 2, 3] }), // H1, H2, H3 like Notion
+        CodeBlock, // Code blocks
+        TextAlign.configure({ types: ['heading', 'paragraph'] }), // Alignment
+        Placeholder.configure({
+            placeholder: 'Type / for commands or start writing...',
+        }), // Notion-like placeholder
+    ],
+    onUpdate: ({ editor }) => {
+        newNote.value.content = editor.getHTML();
+    },
+});
+
+// Cleanup editor on unmount
+onBeforeUnmount(() => {
+    if (editor) {
+        editor.destroy();
+    }
+});
 
 // Computed property for association label
 const associationLabel = computed(() => {
     if (newNote.value.type === 'plan') return 'Study Plan';
     if (newNote.value.type === 'book') return 'Book';
-    return 'Other Content'; // Default for 'content' or empty
+    return 'Other Content';
 });
 
 onMounted(async () => {
@@ -176,7 +228,8 @@ async function createNote() {
         });
         console.log('Note created:', createdNote);
         notes.value.push(createdNote);
-        newNote.value = { type: 'book', id: '', content: '' }; // Reset with default
+        newNote.value = { type: 'book', id: '', content: '' };
+        editor.commands.setContent('');
         error.value = '';
     } catch (err) {
         console.error('Create note error:', err);
@@ -224,3 +277,55 @@ function formatDate(dateStr) {
     return dateStr ? new Date(dateStr).toLocaleDateString() : 'N/A';
 }
 </script>
+
+<style>
+/* Notion-like TipTap editor styles */
+.tiptap {
+    @apply w-full min-h-[150px] p-4 dark:bg-gray-800 dark:text-gray-200 focus:outline-none;
+}
+
+.tiptap p {
+    @apply my-2 text-base;
+}
+
+.tiptap h1 {
+    @apply text-3xl font-bold my-4;
+}
+
+.tiptap h2 {
+    @apply text-2xl font-semibold my-3;
+}
+
+.tiptap h3 {
+    @apply text-xl font-medium my-2;
+}
+
+.tiptap code {
+    @apply bg-gray-100 dark:bg-gray-700 rounded px-1 py-0.5 text-sm;
+}
+
+.tiptap pre {
+    @apply bg-gray-100 dark:bg-gray-700 rounded p-4 my-2 font-mono text-sm overflow-auto;
+}
+
+.tiptap ul,
+.tiptap ol {
+    @apply ml-6 my-2;
+}
+
+.tiptap ul li {
+    @apply list-disc;
+}
+
+.tiptap ol li {
+    @apply list-decimal;
+}
+
+.tiptap p.is-empty::before {
+    content: attr(data-placeholder);
+    @apply text-gray-400 dark:text-gray-500;
+    float: left;
+    height: 0;
+    pointer-events: none;
+}
+</style>
