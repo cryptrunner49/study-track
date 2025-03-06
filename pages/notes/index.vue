@@ -15,19 +15,23 @@
                 </thead>
                 <tbody>
                     <tr v-for="note in notes" :key="note.noteId"
-                        class="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td class="px-6 py-4 dark:text-white truncate max-w-xs">
-                            <VueMarkdown :source="note.content" />
+                        class="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
+                        <td class="px-6 py-4 dark:text-white max-w-xs">
+                            <div v-html="note.content" class="truncate"></div>
                         </td>
                         <td class="px-6 py-4 dark:text-white">
                             {{ getAssociationDisplay(note) }}
                         </td>
                         <td class="px-6 py-4 dark:text-white">{{ formatDate(note.createdDate) }}</td>
                         <td class="px-6 py-4 space-x-4">
-                            <NuxtLink :to="`/notes/${note.noteId}`" class="text-blue-500 hover:underline">Edit
+                            <NuxtLink :to="`/notes/${note.noteId}`"
+                                class="text-blue-500 hover:underline hover:text-blue-700 transition-colors">
+                                Edit
                             </NuxtLink>
                             <button @click="deleteNote(note.noteId)"
-                                class="text-red-500 hover:underline">Delete</button>
+                                class="text-red-500 hover:underline hover:text-red-700 transition-colors">
+                                Delete
+                            </button>
                         </td>
                     </tr>
                     <tr v-if="notes.length === 0">
@@ -77,9 +81,37 @@
                     </select>
                 </div>
                 <div>
-                    <label for="content" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
-                        Note Editor
-                    </label>
+                    <div class="flex items-center space-x-4 mb-2">
+                        <label for="content" class="text-gray-700 dark:text-gray-300 font-medium">
+                            Note Editor
+                        </label>
+                        <div class="flex space-x-2">
+                            <button type="button" @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
+                                :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('heading', { level: 1 }) }"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200">
+                                H1
+                            </button>
+                            <button type="button" @click="editor.chain().focus().toggleBold().run()"
+                                :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('bold') }"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200">
+                                <strong>B</strong>
+                            </button>
+                            <button type="button" @click="editor.chain().focus().toggleItalic().run()"
+                                :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('italic') }"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200">
+                                <em>I</em>
+                            </button>
+                            <button type="button" @click="editor.chain().focus().toggleCodeBlock().run()"
+                                :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('codeBlock') }"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200">
+                                <code>Code</code>
+                            </button>
+                            <button type="button" @click="addImage"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200">
+                                <span>🖼️</span>
+                            </button>
+                        </div>
+                    </div>
                     <div class="relative w-full border rounded dark:border-gray-600">
                         <BubbleMenu :editor="editor" :tippy-options="{ duration: 100 }"
                             class="bg-white dark:bg-gray-700 border dark:border-gray-600 rounded shadow-md p-1 flex space-x-1">
@@ -108,12 +140,16 @@
                                 class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
                                 <code>Code</code>
                             </button>
+                            <button @click="addImage"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
+                                <span>🖼️</span>
+                            </button>
                         </BubbleMenu>
                         <EditorContent :editor="editor" class="tiptap" />
                     </div>
                 </div>
                 <button type="submit"
-                    class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-200">
+                    class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors duration-200">
                     Create Note
                 </button>
             </form>
@@ -132,6 +168,7 @@ import Heading from '@tiptap/extension-heading';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
+import Image from '@tiptap/extension-image';
 import { createLowlight } from 'lowlight';
 import javascript from 'highlight.js/lib/languages/javascript';
 import 'highlight.js/styles/github-dark.css'; // Dark theme for Highlight.js
@@ -152,7 +189,7 @@ const otherContent = ref([]);
 const newNote = ref({ type: 'book', id: '', content: '' });
 const error = ref('');
 
-// TipTap Editor setup with Highlight.js via CodeBlockLowlight
+// TipTap Editor setup with image support and Highlight.js
 const editor = new Editor({
     content: '',
     extensions: [
@@ -161,21 +198,42 @@ const editor = new Editor({
         }),
         Heading.configure({ levels: [1, 2, 3] }),
         CodeBlockLowlight.configure({
-            lowlight, // Use lowlight with Highlight.js
-            defaultLanguage: 'javascript', // Default to JavaScript
-            HTMLAttributes: {
-                class: 'hljs', // Ensure Highlight.js classes are applied
-            },
+            lowlight,
+            defaultLanguage: 'javascript',
+            HTMLAttributes: { class: 'hljs' },
         }),
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Placeholder.configure({
             placeholder: 'Write here... Markdown supported!',
+        }),
+        Image.configure({
+            inline: true,
+            allowBase64: true, // Allow base64 images for simplicity
         }),
     ],
     onUpdate: ({ editor }) => {
         newNote.value.content = editor.getHTML();
     },
 });
+
+// Function to add an image via file input
+function addImage() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = () => {
+        const file = input.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const src = e.target.result;
+                editor.chain().focus().setImage({ src }).run();
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    input.click();
+}
 
 onBeforeUnmount(() => {
     if (editor) {
@@ -290,7 +348,7 @@ function formatDate(dateStr) {
 
 <style>
 .tiptap {
-    @apply w-full min-h-[150px] p-4 dark:bg-gray-800 dark:text-gray-200 focus:outline-none;
+    @apply w-full min-h-[150px] p-4 dark:bg-gray-800 dark:text-gray-200 focus:outline-none rounded-b;
 }
 
 .tiptap p {
@@ -336,5 +394,9 @@ function formatDate(dateStr) {
     float: left;
     height: 0;
     pointer-events: none;
+}
+
+.tiptap img {
+    @apply max-w-full h-auto my-2 rounded;
 }
 </style>
