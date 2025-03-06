@@ -1,0 +1,82 @@
+@startuml
+' Core Classes for Book Reading and Study Plan App
+
+class User {
+  - userId: int
+  - name: String
+  - email: String
+  - password: String
+  + login()
+  + logout()
+  + updateProfile()
+}
+
+class StudyPlan {
+  - planId: int
+  - title: String
+  - description: String
+  + addBook(book: Book)
+  + addOtherContent(content: OtherContent)
+}
+
+class Book {
+  - bookId: int
+  - title: String
+  - author: String
+  - totalPages: int
+  - currentChapter: String
+  - currentPage: int
+  + updateProgress(chapter: String, page: int)
+}
+
+class OtherContent {
+  - contentId: int
+  - title: String
+  - otherType: OtherType
+  - link: String
+  - progressNote: String
+  + updateProgress(note: String)
+  + getContentInfo(): String
+}
+
+enum OtherType {
+  course
+  video
+  paper
+  blog
+  other
+}
+
+class ReadingPlan {
+  - readingPlanId: int
+  - hours: int
+  - minutes: int
+  - monday: boolean
+  - tuesday: boolean
+  - wednesday: boolean
+  - thursday: boolean
+  - friday: boolean
+  - saturday: boolean
+  - sunday: boolean
+  + updateSchedule(hours: int, minutes: int)
+  + setReadingDays(days: Map<String, boolean>)
+}
+
+class Note {
+  - noteId: int
+  - content: String
+  - createdDate: Date
+  + editNote(newContent: String)
+}
+
+' Relationships
+User "1" -- "many" StudyPlan : creates
+StudyPlan "0..1" -- "many" Book : includes
+StudyPlan "0..1" -- "many" OtherContent : includes
+Book "1" -- "0..1" ReadingPlan : has
+Book "1" -- "many" Note : has
+OtherContent "1" -- "many" Note : has
+StudyPlan "1" -- "many" Note : has
+OtherContent "1" -- "1" OtherType : categorized_as
+
+@enduml
