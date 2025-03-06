@@ -34,4 +34,4 @@ export default defineEventHandler((event) => {
 });
 
 // Apply auth middleware
-export const middleware = ['auth'];
+export const middleware = ['api-auth'];

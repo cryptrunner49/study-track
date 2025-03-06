@@ -1,9 +1,21 @@
-// server/api/other-content.get.js
-export default defineEventHandler(() => {
-    // Mock data for other content
-    const otherContent = [
-        { contentId: 1, title: "Content 1", type: "video", link: "https://example.com" },
-        { contentId: 2, title: "Content 2", type: "course", link: "https://example.com" },
-    ];
-    return otherContent;
+import db from '../db';
+import { defineEventHandler, createError } from 'h3';
+
+export default defineEventHandler((event) => {
+    const user = event.context.user;
+    if (!user) {
+        throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
+    }
+    return new Promise((resolve, reject) => {
+        db.all(
+            'SELECT * FROM OtherContent WHERE planId IN (SELECT planId FROM StudyPlans WHERE userId = ?)',
+            [user.userId],
+            (err, rows) => {
+                if (err) reject(createError({ statusCode: 500, statusMessage: 'Failed to fetch other content' }));
+                else resolve(rows || []);
+            }
+        );
+    });
 });
+
+export const middleware = ['api-auth'];
