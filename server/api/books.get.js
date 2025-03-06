@@ -1,14 +1,22 @@
 // server/api/books.get.js
-import db from "../db";
+import db from '../db';
+import { defineEventHandler, createError } from 'h3';
 
-export default defineEventHandler(() => {
+export default defineEventHandler((event) => {
+    const user = event.context.user;
+    if (!user) {
+        throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
+    }
     return new Promise((resolve, reject) => {
-        db.all("SELECT * FROM books", [], (err, rows) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve(rows);
+        db.all(
+            'SELECT * FROM Books WHERE planId IN (SELECT planId FROM StudyPlans WHERE userId = ?)',
+            [user.userId],
+            (err, rows) => {
+                if (err) reject(createError({ statusCode: 500, statusMessage: 'Failed to fetch books' }));
+                else resolve(rows || []);
             }
-        });
+        );
     });
 });
+
+export const middleware = ['auth'];

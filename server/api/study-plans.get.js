@@ -1,16 +1,37 @@
-import db from '~/server/db';
-import { defineEventHandler } from 'h3';
-import { getCurrentUser } from '~/server/utils/auth';
+// server/api/study-plans.get.js
+import db from '../db';
+import { defineEventHandler, createError } from 'h3';
 
 export default defineEventHandler((event) => {
-    const userId = getCurrentUser(event);
-    return new Promise((resolve, reject) => {
-        db.all('SELECT * FROM StudyPlans WHERE userId = ?', [userId], (err, rows) => {
-            if (err) {
-                reject(new Error('Database error'));
-            } else {
-                resolve(rows);
-            }
+    const user = event.context.user; // Set by auth middleware
+
+    if (!user) {
+        throw createError({
+            statusCode: 401,
+            statusMessage: 'Unauthorized: User not authenticated',
         });
+    }
+
+    return new Promise((resolve, reject) => {
+        db.all(
+            'SELECT * FROM StudyPlans WHERE userId = ?',
+            [user.userId],
+            (err, rows) => {
+                if (err) {
+                    console.error('Database error:', err);
+                    reject(
+                        createError({
+                            statusCode: 500,
+                            statusMessage: 'Failed to fetch study plans: Database error',
+                        })
+                    );
+                } else {
+                    resolve(rows || []);
+                }
+            }
+        );
     });
 });
+
+// Apply auth middleware
+export const middleware = ['auth'];
