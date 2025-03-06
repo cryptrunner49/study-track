@@ -2,47 +2,57 @@
     <div class="py-8 max-w-5xl mx-auto">
         <h1 class="text-3xl font-bold mb-8 dark:text-white">Your Notes</h1>
 
-        <!-- Notes List -->
-        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden mb-8">
-            <table class="w-full table-auto">
-                <thead>
-                    <tr class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
-                        <th class="px-6 py-4 text-left">Content</th>
-                        <th class="px-6 py-4 text-left">Associated With</th>
-                        <th class="px-6 py-4 text-left">Created</th>
-                        <th class="px-6 py-4 text-left">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="note in notes" :key="note.noteId"
-                        class="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
-                        <td class="px-6 py-4 dark:text-white max-w-xs">
-                            <div v-html="note.content" class="truncate"></div>
-                        </td>
-                        <td class="px-6 py-4 dark:text-white">
-                            {{ getAssociationDisplay(note) }}
-                        </td>
-                        <td class="px-6 py-4 dark:text-white">{{ formatDate(note.createdDate) }}</td>
-                        <td class="px-6 py-4 space-x-4">
-                            <NuxtLink :to="`/notes/${note.noteId}`"
-                                class="text-blue-500 hover:underline hover:text-blue-700 transition-colors">
-                                Edit
-                            </NuxtLink>
-                            <button @click="deleteNote(note.noteId)"
-                                class="text-red-500 hover:underline hover:text-red-700 transition-colors">
-                                Delete
-                            </button>
-                        </td>
-                    </tr>
-                    <tr v-if="notes.length === 0">
-                        <td colspan="4" class="px-6 py-4 text-center dark:text-white">No notes found.</td>
-                    </tr>
-                </tbody>
-            </table>
+        <!-- Notes List Section -->
+        <div v-if="!isCreatingNote" class="space-y-6">
+            <button @click="isCreatingNote = true"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200">
+                Add a New Note
+            </button>
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+                <div class="border-b dark:border-gray-600">
+                    <table class="w-full table-auto">
+                        <thead>
+                            <tr class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                                <th class="px-4 py-3 text-left w-3/5">Content</th>
+                                <th class="px-4 py-3 text-left w-1/5">Associated With</th>
+                                <th class="px-4 py-3 text-left w-1/10">Created</th>
+                                <th class="px-4 py-3 text-left w-1/10">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="note in notes" :key="note.noteId"
+                                class="border-t dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
+                                <td class="px-4 py-3 dark:text-white">
+                                    <div v-html="note.content" class="line-clamp-2"></div>
+                                </td>
+                                <td class="px-4 py-3 dark:text-white truncate">
+                                    {{ getAssociationDisplay(note) }}
+                                </td>
+                                <td class="px-4 py-3 dark:text-white">
+                                    {{ formatDate(note.createdDate) }}
+                                </td>
+                                <td class="px-4 py-3 space-x-2 whitespace-nowrap">
+                                    <NuxtLink :to="`/notes/${note.noteId}`"
+                                        class="text-blue-500 hover:underline hover:text-blue-700 transition-colors">
+                                        Edit
+                                    </NuxtLink>
+                                    <button @click="deleteNote(note.noteId)"
+                                        class="text-red-500 hover:underline hover:text-red-700 transition-colors">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr v-if="notes.length === 0" class="border-t dark:border-gray-600">
+                                <td colspan="4" class="px-4 py-3 text-center dark:text-white">No notes found.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
-        <!-- Create New Note Form -->
-        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+        <!-- Create New Note Form Section -->
+        <div v-if="isCreatingNote" class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
             <h2 class="text-2xl font-bold mb-6 dark:text-white">Add a New Note</h2>
             <form @submit.prevent="createNote" class="space-y-6">
                 <div>
@@ -148,10 +158,16 @@
                         <EditorContent :editor="editor" class="tiptap" />
                     </div>
                 </div>
-                <button type="submit"
-                    class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors duration-200">
-                    Create Note
-                </button>
+                <div class="flex space-x-4">
+                    <button type="submit"
+                        class="flex-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors duration-200">
+                        Create Note
+                    </button>
+                    <button type="button" @click="cancelNoteCreation"
+                        class="flex-1 bg-gray-500 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded transition-colors duration-200">
+                        Cancel
+                    </button>
+                </div>
             </form>
             <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
         </div>
@@ -161,7 +177,6 @@
 <script setup>
 import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
 import { useUserStore } from '~/stores/user';
-import VueMarkdown from 'vue3-markdown-it';
 import { Editor, EditorContent, BubbleMenu } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import Heading from '@tiptap/extension-heading';
@@ -170,12 +185,76 @@ import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
 import { createLowlight } from 'lowlight';
+
+import c from 'highlight.js/lib/languages/c';
+import cpp from 'highlight.js/lib/languages/cpp';
 import javascript from 'highlight.js/lib/languages/javascript';
+import typescript from 'highlight.js/lib/languages/typescript';
+import ruby from 'highlight.js/lib/languages/ruby';
+import go from 'highlight.js/lib/languages/go';
+import python from 'highlight.js/lib/languages/python';
+import markdown from 'highlight.js/lib/languages/markdown';
+import css from 'highlight.js/lib/languages/css';
+import java from 'highlight.js/lib/languages/java';
+import csharp from 'highlight.js/lib/languages/csharp';
+import glsl from 'highlight.js/lib/languages/glsl';
+import django from 'highlight.js/lib/languages/django';
+import xml from 'highlight.js/lib/languages/xml';
+import yaml from 'highlight.js/lib/languages/yaml';
+import vbscript from 'highlight.js/lib/languages/vbscript';
+import vbnet from 'highlight.js/lib/languages/vbnet';
+import shell from 'highlight.js/lib/languages/shell';
+import scheme from 'highlight.js/lib/languages/scheme';
+import rust from 'highlight.js/lib/languages/rust';
+import vim from 'highlight.js/lib/languages/vim';
+import makefile from 'highlight.js/lib/languages/makefile';
+import latex from 'highlight.js/lib/languages/latex';
+import json from 'highlight.js/lib/languages/json';
+import haskell from 'highlight.js/lib/languages/haskell';
+import groovy from 'highlight.js/lib/languages/groovy';
+import gradle from 'highlight.js/lib/languages/gradle';
+import dockerfile from 'highlight.js/lib/languages/dockerfile';
+import cmake from 'highlight.js/lib/languages/cmake';
+import basic from 'highlight.js/lib/languages/basic';
+import awk from 'highlight.js/lib/languages/awk';
+import angelscript from 'highlight.js/lib/languages/angelscript';
+
 import 'highlight.js/styles/github-dark.css'; // Dark theme for Highlight.js
 
 // Initialize lowlight with Highlight.js
 const lowlight = createLowlight();
+lowlight.register('c', c);
+lowlight.register('cpp', cpp);
 lowlight.register('javascript', javascript);
+lowlight.register('typescript', typescript);
+lowlight.register('ruby', ruby);
+lowlight.register('go', go);
+lowlight.register('python', python);
+lowlight.register('markdown', markdown);
+lowlight.register('css', css);
+lowlight.register('java', java);
+lowlight.register('csharp', csharp);
+lowlight.register('glsl', glsl);
+lowlight.register('django', django);
+lowlight.register('xml', xml);
+lowlight.register('yaml', yaml);
+lowlight.register('vbscript', vbscript);
+lowlight.register('vbnet', vbnet);
+lowlight.register('shell', shell);
+lowlight.register('scheme', scheme);
+lowlight.register('rust', rust);
+lowlight.register('vim', vim);
+lowlight.register('makefile', makefile);
+lowlight.register('latex', latex);
+lowlight.register('json', json);
+lowlight.register('haskell', haskell);
+lowlight.register('groovy', groovy);
+lowlight.register('gradle', gradle);
+lowlight.register('dockerfile', dockerfile);
+lowlight.register('cmake', cmake);
+lowlight.register('basic', basic);
+lowlight.register('awk', awk);
+lowlight.register('angelscript', angelscript);
 
 definePageMeta({
     middleware: ['auth'],
@@ -188,6 +267,7 @@ const books = ref([]);
 const otherContent = ref([]);
 const newNote = ref({ type: 'book', id: '', content: '' });
 const error = ref('');
+const isCreatingNote = ref(false); // State to toggle between notes list and form
 
 // TipTap Editor setup with image support and Highlight.js
 const editor = new Editor({
@@ -301,10 +381,18 @@ async function createNote() {
         newNote.value = { type: 'book', id: '', content: '' };
         editor.commands.setContent('');
         error.value = '';
+        isCreatingNote.value = false; // Switch back to notes list after creation
     } catch (err) {
         console.error('Create note error:', err);
         error.value = 'Failed to create note: ' + (err.data?.statusMessage || err.message);
     }
+}
+
+function cancelNoteCreation() {
+    newNote.value = { type: 'book', id: '', content: '' };
+    editor.commands.setContent('');
+    error.value = '';
+    isCreatingNote.value = false; // Switch back to notes list
 }
 
 async function deleteNote(noteId) {
@@ -398,5 +486,14 @@ function formatDate(dateStr) {
 
 .tiptap img {
     @apply max-w-full h-auto my-2 rounded;
+}
+
+/* Cleaner table styles */
+.line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 </style>
