@@ -8,45 +8,39 @@
                 class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200">
                 Add a New Note
             </button>
-            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
-                <div class="border-b dark:border-gray-600">
-                    <table class="w-full table-auto">
-                        <thead>
-                            <tr class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
-                                <th class="px-4 py-3 text-left w-3/5">Content</th>
-                                <th class="px-4 py-3 text-left w-1/5">Associated With</th>
-                                <th class="px-4 py-3 text-left w-1/10">Created</th>
-                                <th class="px-4 py-3 text-left w-1/10">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="note in notes" :key="note.noteId"
-                                class="border-t dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
-                                <td class="px-4 py-3 dark:text-white">
-                                    <div v-html="note.content" class="line-clamp-2"></div>
-                                </td>
-                                <td class="px-4 py-3 dark:text-white truncate">
-                                    {{ getAssociationDisplay(note) }}
-                                </td>
-                                <td class="px-4 py-3 dark:text-white">
-                                    {{ formatDate(note.createdDate) }}
-                                </td>
-                                <td class="px-4 py-3 space-x-2 whitespace-nowrap">
-                                    <NuxtLink :to="`/notes/${note.noteId}`"
-                                        class="text-blue-500 hover:underline hover:text-blue-700 transition-colors">
-                                        Edit
-                                    </NuxtLink>
-                                    <button @click="deleteNote(note.noteId)"
-                                        class="text-red-500 hover:underline hover:text-red-700 transition-colors">
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr v-if="notes.length === 0" class="border-t dark:border-gray-600">
-                                <td colspan="4" class="px-4 py-3 text-center dark:text-white">No notes found.</td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div class="space-y-6">
+                <div v-for="note in notes" :key="note.noteId"
+                    class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 transition-all duration-200 hover:shadow-lg">
+                    <!-- Content (Main Focus) -->
+                    <div class="note-content mb-4 dark:text-gray-200">
+                        <div v-html="note.content"></div>
+                    </div>
+                    <!-- Metadata and Actions -->
+                    <div
+                        class="flex flex-col sm:flex-row sm:justify-between sm:items-center border-t dark:border-gray-700 pt-4 text-sm text-gray-600 dark:text-gray-400">
+                        <div class="space-y-2 sm:space-y-0 sm:space-x-6">
+                            <span>
+                                <strong>Associated With:</strong> {{ getAssociationDisplay(note) }}
+                            </span>
+                            <span>
+                                <strong>Created:</strong> {{ formatDate(note.createdDate) }}
+                            </span>
+                        </div>
+                        <div class="mt-4 sm:mt-0 flex space-x-4">
+                            <NuxtLink :to="`/notes/${note.noteId}`"
+                                class="text-blue-500 hover:underline hover:text-blue-700 transition-colors">
+                                Edit
+                            </NuxtLink>
+                            <button @click="deleteNote(note.noteId)"
+                                class="text-red-500 hover:underline hover:text-red-700 transition-colors">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="notes.length === 0"
+                    class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 text-center dark:text-gray-300">
+                    No notes found.
                 </div>
             </div>
         </div>
@@ -186,6 +180,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
 import { createLowlight } from 'lowlight';
 
+// Import Highlight.js languages
 import c from 'highlight.js/lib/languages/c';
 import cpp from 'highlight.js/lib/languages/cpp';
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -435,6 +430,7 @@ function formatDate(dateStr) {
 </script>
 
 <style>
+/* Editor Styles */
 .tiptap {
     @apply w-full min-h-[150px] p-4 dark:bg-gray-800 dark:text-gray-200 focus:outline-none rounded-b;
 }
@@ -488,12 +484,45 @@ function formatDate(dateStr) {
     @apply max-w-full h-auto my-2 rounded;
 }
 
-/* Cleaner table styles */
-.line-clamp-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+/* Note Content Styles */
+.note-content p {
+    @apply my-2 text-base;
+}
+
+.note-content h1 {
+    @apply text-3xl font-bold my-4;
+}
+
+.note-content h2 {
+    @apply text-2xl font-semibold my-3;
+}
+
+.note-content h3 {
+    @apply text-xl font-medium my-2;
+}
+
+.note-content code {
+    @apply bg-gray-100 dark:bg-gray-700 rounded px-1 py-0.5 text-sm;
+}
+
+.note-content pre {
+    @apply bg-gray-100 dark:bg-gray-700 rounded p-4 my-2 font-mono text-sm overflow-auto;
+}
+
+.note-content ul,
+.note-content ol {
+    @apply ml-6 my-2;
+}
+
+.note-content ul li {
+    @apply list-disc;
+}
+
+.note-content ol li {
+    @apply list-decimal;
+}
+
+.note-content img {
+    @apply max-w-full h-auto my-2 rounded;
 }
 </style>
