@@ -2,8 +2,12 @@
 import db from '../db';
 import { defineEventHandler, createError } from 'h3';
 
+// Apply auth middleware to ensure the user is authenticated
+export const middleware = ['api-auth'];
+
 export default defineEventHandler((event) => {
-    const user = event.context.user; // Set by auth middleware
+    const user = event.context.user; // Set by the auth middleware
+    console.log("User from auth middleware:", user);
 
     if (!user) {
         throw createError({
@@ -19,19 +23,15 @@ export default defineEventHandler((event) => {
             (err, rows) => {
                 if (err) {
                     console.error('Database error:', err);
-                    reject(
+                    return reject(
                         createError({
                             statusCode: 500,
                             statusMessage: 'Failed to fetch study plans: Database error',
                         })
                     );
-                } else {
-                    resolve(rows || []);
                 }
+                resolve(rows || []);
             }
         );
     });
 });
-
-// Apply auth middleware
-export const middleware = ['api-auth'];
