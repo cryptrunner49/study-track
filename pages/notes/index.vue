@@ -1,32 +1,76 @@
 <template>
-    <div class="py-8 max-w-5xl mx-auto">
-        <h1 class="text-3xl font-bold mb-8 dark:text-white">Your Notes</h1>
+    <div class="py-4 max-w-5xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6 dark:text-white">Your Notes</h1>
 
         <!-- Notes List Section -->
-        <div v-if="!isCreatingNote" class="space-y-6">
-            <button @click="isCreatingNote = true"
-                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200">
-                Add a New Note
-            </button>
-            <div class="space-y-6">
-                <div v-for="note in notes" :key="note.noteId"
-                    class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 transition-all duration-200 hover:shadow-lg">
+        <div v-if="!isCreatingNote" class="space-y-4">
+            <!-- Toolbar -->
+            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 flex flex-col sm:flex-row gap-4">
+                <div class="flex-1">
+                    <label for="filterType" class="block text-sm text-gray-700 dark:text-gray-300 font-medium mb-1">
+                        Filter by Type
+                    </label>
+                    <select id="filterType" v-model="filter.type"
+                        class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        @change="filter.id = ''; applyFilters()">
+                        <option value="">All Types</option>
+                        <option value="plan">Study Plan</option>
+                        <option value="book">Book</option>
+                        <option value="content">Other Content</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label for="filterName" class="block text-sm text-gray-700 dark:text-gray-300 font-medium mb-1">
+                        Search by Name
+                    </label>
+                    <input id="filterName" v-model="filter.name" type="text" placeholder="Enter name..."
+                        class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        @input="applyFilters" />
+                </div>
+                <div class="flex-1">
+                    <label for="filterId" class="block text-sm text-gray-700 dark:text-gray-300 font-medium mb-1">
+                        Filter by Specific Item
+                    </label>
+                    <select id="filterId" v-model="filter.id"
+                        class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        :disabled="!filter.type" @change="applyFilters">
+                        <option value="">All Items</option>
+                        <option v-if="filter.type === 'plan'" v-for="plan in studyPlans" :key="plan.planId"
+                            :value="plan.planId">
+                            {{ plan.title }}
+                        </option>
+                        <option v-if="filter.type === 'book'" v-for="book in books" :key="book.bookId"
+                            :value="book.bookId">
+                            {{ book.title }} (Plan: {{ getPlanTitle(book.planId) }})
+                        </option>
+                        <option v-if="filter.type === 'content'" v-for="content in otherContent"
+                            :key="content.contentId" :value="content.contentId">
+                            {{ content.title }} ({{ content.otherType || 'N/A' }})
+                        </option>
+                    </select>
+                </div>
+                <button @click="isCreatingNote = true"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded transition-colors duration-200 self-end">
+                    Add Note
+                </button>
+            </div>
+
+            <!-- Notes List -->
+            <div class="space-y-3">
+                <div v-for="note in filteredNotes" :key="note.noteId"
+                    class="bg-white dark:bg-gray-800 shadow-sm rounded-md p-3 transition-all duration-200 hover:shadow-md">
                     <!-- Content (Main Focus) -->
-                    <div class="note-content mb-4 dark:text-gray-200">
+                    <div class="note-content mb-2 dark:text-gray-200 text-sm">
                         <div v-html="note.content"></div>
                     </div>
                     <!-- Metadata and Actions -->
                     <div
-                        class="flex flex-col sm:flex-row sm:justify-between sm:items-center border-t dark:border-gray-700 pt-4 text-sm text-gray-600 dark:text-gray-400">
-                        <div class="space-y-2 sm:space-y-0 sm:space-x-6">
-                            <span>
-                                <strong>Associated With:</strong> {{ getAssociationDisplay(note) }}
-                            </span>
-                            <span>
-                                <strong>Created:</strong> {{ formatDate(note.createdDate) }}
-                            </span>
+                        class="flex flex-col sm:flex-row sm:justify-between sm:items-center border-t dark:border-gray-700 pt-2 text-xs text-gray-600 dark:text-gray-400">
+                        <div class="space-y-1 sm:space-y-0 sm:space-x-4">
+                            <span><strong>With:</strong> {{ getAssociationDisplay(note) }}</span>
+                            <span><strong>Created:</strong> {{ formatDate(note.createdDate) }}</span>
                         </div>
-                        <div class="mt-4 sm:mt-0 flex space-x-4">
+                        <div class="mt-2 sm:mt-0 flex space-x-3">
                             <NuxtLink :to="`/notes/${note.noteId}`"
                                 class="text-blue-500 hover:underline hover:text-blue-700 transition-colors">
                                 Edit
@@ -38,8 +82,8 @@
                         </div>
                     </div>
                 </div>
-                <div v-if="notes.length === 0"
-                    class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 text-center dark:text-gray-300">
+                <div v-if="filteredNotes.length === 0"
+                    class="bg-white dark:bg-gray-800 shadow-sm rounded-md p-3 text-center dark:text-gray-300 text-sm">
                     No notes found.
                 </div>
             </div>
@@ -47,10 +91,10 @@
 
         <!-- Create New Note Form Section -->
         <div v-if="isCreatingNote" class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
-            <h2 class="text-2xl font-bold mb-6 dark:text-white">Add a New Note</h2>
-            <form @submit.prevent="createNote" class="space-y-6">
+            <h2 class="text-xl font-bold mb-4 dark:text-white">Add a New Note</h2>
+            <form @submit.prevent="createNote" class="space-y-4">
                 <div>
-                    <label for="associationType" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                    <label for="associationType" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">
                         Associate With
                     </label>
                     <select id="associationType" v-model="newNote.type"
@@ -63,7 +107,7 @@
                     </select>
                 </div>
                 <div v-if="newNote.type">
-                    <label for="associationId" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">
+                    <label for="associationId" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">
                         {{ associationLabel }}
                     </label>
                     <select id="associationId" v-model="newNote.id"
@@ -154,11 +198,11 @@
                 </div>
                 <div class="flex space-x-4">
                     <button type="submit"
-                        class="flex-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition-colors duration-200">
+                        class="flex-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200">
                         Create Note
                     </button>
                     <button type="button" @click="cancelNoteCreation"
-                        class="flex-1 bg-gray-500 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded transition-colors duration-200">
+                        class="flex-1 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200">
                         Cancel
                     </button>
                 </div>
@@ -257,41 +301,31 @@ definePageMeta({
 
 const userStore = useUserStore();
 const notes = ref([]);
+const filteredNotes = ref([]);
 const studyPlans = ref([]);
 const books = ref([]);
 const otherContent = ref([]);
 const newNote = ref({ type: 'book', id: '', content: '' });
 const error = ref('');
-const isCreatingNote = ref(false); // State to toggle between notes list and form
+const isCreatingNote = ref(false);
+const filter = ref({ type: '', name: '', id: '' }); // Filter state
 
-// TipTap Editor setup with image support and Highlight.js
+// TipTap Editor setup
 const editor = new Editor({
     content: '',
     extensions: [
-        StarterKit.configure({
-            codeBlock: false, // Disable default CodeBlock
-        }),
+        StarterKit.configure({ codeBlock: false }),
         Heading.configure({ levels: [1, 2, 3] }),
-        CodeBlockLowlight.configure({
-            lowlight,
-            defaultLanguage: 'javascript',
-            HTMLAttributes: { class: 'hljs' },
-        }),
+        CodeBlockLowlight.configure({ lowlight, defaultLanguage: 'javascript', HTMLAttributes: { class: 'hljs' } }),
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
-        Placeholder.configure({
-            placeholder: 'Write here... Markdown supported!',
-        }),
-        Image.configure({
-            inline: true,
-            allowBase64: true, // Allow base64 images for simplicity
-        }),
+        Placeholder.configure({ placeholder: 'Write here... Markdown supported!' }),
+        Image.configure({ inline: true, allowBase64: true }),
     ],
     onUpdate: ({ editor }) => {
         newNote.value.content = editor.getHTML();
     },
 });
 
-// Function to add an image via file input
 function addImage() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -311,9 +345,7 @@ function addImage() {
 }
 
 onBeforeUnmount(() => {
-    if (editor) {
-        editor.destroy();
-    }
+    if (editor) editor.destroy();
 });
 
 const associationLabel = computed(() => {
@@ -328,25 +360,19 @@ onMounted(async () => {
         return;
     }
     try {
-        console.log('Fetching notes...');
-        const notesData = await $fetch('/api/notes', { credentials: 'include' });
-        console.log('Notes fetched:', notesData);
+        console.log('Fetching data...');
+        const [notesData, plansData, booksData, contentData] = await Promise.all([
+            $fetch('/api/notes', { credentials: 'include' }),
+            $fetch('/api/study-plans', { credentials: 'include' }),
+            $fetch('/api/books', { credentials: 'include' }),
+            $fetch('/api/other-content', { credentials: 'include' }),
+        ]);
         notes.value = notesData;
-
-        console.log('Fetching study plans...');
-        const plansData = await $fetch('/api/study-plans', { credentials: 'include' });
-        console.log('Study plans fetched:', plansData);
+        filteredNotes.value = notesData; // Initialize filteredNotes
         studyPlans.value = plansData;
-
-        console.log('Fetching books...');
-        const booksData = await $fetch('/api/books', { credentials: 'include' });
-        console.log('Books fetched:', booksData);
         books.value = booksData;
-
-        console.log('Fetching other content...');
-        const contentData = await $fetch('/api/other-content', { credentials: 'include' });
-        console.log('Other content fetched:', contentData);
         otherContent.value = contentData;
+        console.log('Data fetched:', { notesData, plansData, booksData, contentData });
     } catch (err) {
         console.error('Fetch error:', err);
         error.value = 'Failed to load data: ' + (err.data?.statusMessage || err.message);
@@ -359,7 +385,6 @@ async function createNote() {
         return;
     }
     try {
-        console.log('Creating note with:', newNote.value);
         const payload = {
             content: newNote.value.content,
             ...(newNote.value.type === 'plan' && { planId: Number(newNote.value.id) }),
@@ -371,12 +396,13 @@ async function createNote() {
             body: payload,
             credentials: 'include',
         });
-        console.log('Note created:', createdNote);
         notes.value.push(createdNote);
+        filteredNotes.value = notes.value; // Update filteredNotes
         newNote.value = { type: 'book', id: '', content: '' };
         editor.commands.setContent('');
         error.value = '';
-        isCreatingNote.value = false; // Switch back to notes list after creation
+        isCreatingNote.value = false;
+        applyFilters(); // Reapply filters after creation
     } catch (err) {
         console.error('Create note error:', err);
         error.value = 'Failed to create note: ' + (err.data?.statusMessage || err.message);
@@ -387,14 +413,14 @@ function cancelNoteCreation() {
     newNote.value = { type: 'book', id: '', content: '' };
     editor.commands.setContent('');
     error.value = '';
-    isCreatingNote.value = false; // Switch back to notes list
+    isCreatingNote.value = false;
 }
 
 async function deleteNote(noteId) {
     try {
-        console.log('Deleting note:', noteId);
         await $fetch(`/api/notes/${noteId}`, { method: 'DELETE', credentials: 'include' });
         notes.value = notes.value.filter((note) => note.noteId !== noteId);
+        applyFilters(); // Reapply filters after deletion
         error.value = '';
     } catch (err) {
         console.error('Delete note error:', err);
@@ -427,41 +453,77 @@ function getAssociationDisplay(note) {
 function formatDate(dateStr) {
     return dateStr ? new Date(dateStr).toLocaleDateString() : 'N/A';
 }
+
+// Filter Logic
+function applyFilters() {
+    let result = [...notes.value];
+
+    // Filter by type
+    if (filter.value.type) {
+        result = result.filter((note) => {
+            if (filter.value.type === 'plan') return !!note.planId;
+            if (filter.value.type === 'book') return !!note.bookId;
+            if (filter.value.type === 'content') return !!note.contentId;
+            return true;
+        });
+    }
+
+    // Filter by specific ID
+    if (filter.value.id) {
+        result = result.filter((note) => {
+            if (filter.value.type === 'plan') return note.planId === Number(filter.value.id);
+            if (filter.value.type === 'book') return note.bookId === Number(filter.value.id);
+            if (filter.value.type === 'content') return note.contentId === Number(filter.value.id);
+            return false;
+        });
+    }
+
+    // Filter by name (case-insensitive)
+    if (filter.value.name) {
+        const searchTerm = filter.value.name.toLowerCase();
+        result = result.filter((note) => {
+            const title = getAssociationDisplay(note).toLowerCase();
+            return title.includes(searchTerm);
+        });
+    }
+
+    filteredNotes.value = result;
+}
 </script>
 
 <style>
 /* Editor Styles */
 .tiptap {
-    @apply w-full min-h-[150px] p-4 dark:bg-gray-800 dark:text-gray-200 focus:outline-none rounded-b;
+    @apply w-full min-h-[100px] p-2 dark:bg-gray-800 dark:text-gray-200 focus:outline-none rounded-b;
 }
 
 .tiptap p {
-    @apply my-2 text-base;
+    @apply my-1 text-sm;
 }
 
 .tiptap h1 {
-    @apply text-3xl font-bold my-4;
+    @apply text-xl font-bold my-2;
 }
 
 .tiptap h2 {
-    @apply text-2xl font-semibold my-3;
+    @apply text-lg font-semibold my-1.5;
 }
 
 .tiptap h3 {
-    @apply text-xl font-medium my-2;
+    @apply text-base font-medium my-1;
 }
 
 .tiptap code {
-    @apply bg-gray-100 dark:bg-gray-700 rounded px-1 py-0.5 text-sm;
+    @apply bg-gray-100 dark:bg-gray-700 rounded px-0.5 py-0.5 text-xs;
 }
 
 .tiptap pre {
-    @apply bg-gray-100 dark:bg-gray-700 rounded p-4 my-2 font-mono text-sm overflow-auto;
+    @apply bg-gray-100 dark:bg-gray-700 rounded p-2 my-1 font-mono text-xs overflow-auto;
 }
 
 .tiptap ul,
 .tiptap ol {
-    @apply ml-6 my-2;
+    @apply ml-3 my-1;
 }
 
 .tiptap ul li {
@@ -481,37 +543,41 @@ function formatDate(dateStr) {
 }
 
 .tiptap img {
-    @apply max-w-full h-auto my-2 rounded;
+    @apply max-w-full h-auto my-1 rounded;
 }
 
 /* Note Content Styles */
+.note-content {
+    @apply w-1/2;
+}
+
 .note-content p {
-    @apply my-2 text-base;
+    @apply my-1 text-sm;
 }
 
 .note-content h1 {
-    @apply text-3xl font-bold my-4;
+    @apply text-xl font-bold my-2;
 }
 
 .note-content h2 {
-    @apply text-2xl font-semibold my-3;
+    @apply text-lg font-semibold my-1.5;
 }
 
 .note-content h3 {
-    @apply text-xl font-medium my-2;
+    @apply text-base font-medium my-1;
 }
 
 .note-content code {
-    @apply bg-gray-100 dark:bg-gray-700 rounded px-1 py-0.5 text-sm;
+    @apply bg-gray-100 dark:bg-gray-700 rounded px-0.5 py-0.5 text-xs;
 }
 
 .note-content pre {
-    @apply bg-gray-100 dark:bg-gray-700 rounded p-4 my-2 font-mono text-sm overflow-auto;
+    @apply bg-gray-100 dark:bg-gray-700 rounded p-2 my-1 font-mono text-xs overflow-auto;
 }
 
 .note-content ul,
 .note-content ol {
-    @apply ml-6 my-2;
+    @apply ml-3 my-1;
 }
 
 .note-content ul li {
@@ -523,6 +589,6 @@ function formatDate(dateStr) {
 }
 
 .note-content img {
-    @apply max-w-full h-auto my-2 rounded;
+    @apply max-w-full h-auto my-1 rounded;
 }
 </style>
