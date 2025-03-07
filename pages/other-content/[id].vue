@@ -36,39 +36,45 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'nuxt/app';
-import { OtherTypeValues } from '~/server/types';
+import { useUserStore } from '~/stores/user';
+import { getOtherContent, updateOtherContent } from '~/client/api/other-content';
+import { OtherTypeValues } from '~/client/types';
 
 definePageMeta({
     middleware: ['auth'],
 });
 
 const route = useRoute();
-const router = useRouter(); // Add router for navigation
+const router = useRouter();
+const userStore = useUserStore();
 const content = ref({});
 const error = ref('');
 const otherTypes = ref(OtherTypeValues);
 
 onMounted(async () => {
     try {
-        content.value = await $fetch(`/api/other-content/${route.params.id}`, { credentials: 'include' });
+        const user = userStore.user;
+        if (!user) throw new Error('User not authenticated');
+        content.value = await getOtherContent(route.params.id, user);
     } catch (err) {
-        error.value = 'Failed to load content: ' + (err.data?.statusMessage || err.message);
+        error.value = err.message || 'Failed to load content';
     }
 });
 
 async function updateContent() {
     try {
-        const updatedContent = await $fetch(`/api/other-content/${route.params.id}`, {
-            method: 'PUT',
-            body: content.value,
-            credentials: 'include',
+        const user = userStore.user;
+        if (!user) throw new Error('User not authenticated');
+        const updatedContent = await updateOtherContent(route.params.id, user, {
+            title: content.value.title,
+            otherType: content.value.otherType,
+            link: content.value.link,
         });
         content.value = updatedContent;
         error.value = '';
-        // Redirect back to the other-content index page after successful update
         router.push('/other-content');
     } catch (err) {
-        error.value = 'Failed to update content: ' + (err.data?.statusMessage || err.message);
+        error.value = err.message || 'Failed to update content';
     }
 }
 </script>

@@ -85,12 +85,16 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { OtherTypeValues } from '~/server/types';
+import { useUserStore } from '~/stores/user';
+import { getOtherContents, createOtherContent, deleteOtherContent } from '~/client/api/other-content';
+import { getStudyPlans } from '~/client/api/study-plans';
+import { OtherTypeValues } from '~/client/types';
 
 definePageMeta({
     middleware: ['auth'],
 });
 
+const userStore = useUserStore();
 const otherContent = ref([]);
 const studyPlans = ref([]);
 const newContent = ref({ planId: '', title: '', otherType: '', link: '' });
@@ -99,40 +103,42 @@ const otherTypes = ref(OtherTypeValues);
 
 onMounted(async () => {
     try {
-        otherContent.value = await $fetch('/api/other-content', { credentials: 'include' });
-        studyPlans.value = await $fetch('/api/study-plans', { credentials: 'include' });
+        const user = userStore.user;
+        if (!user) throw new Error('User not authenticated');
+        otherContent.value = await getOtherContents(user);
+        studyPlans.value = await getStudyPlans(user);
     } catch (err) {
-        error.value = 'Failed to load content: ' + (err.data?.statusMessage || err.message);
+        error.value = err.message || 'Failed to load content';
     }
 });
 
 async function createContent() {
     try {
-        const createdContent = await $fetch('/api/other-content', {
-            method: 'POST',
-            body: {
-                planId: Number(newContent.value.planId), // Ensure planId is a number
-                title: newContent.value.title,
-                otherType: newContent.value.otherType,
-                link: newContent.value.link || null,
-            },
-            credentials: 'include',
+        const user = userStore.user;
+        if (!user) throw new Error('User not authenticated');
+        const createdContent = await createOtherContent(user, {
+            planId: Number(newContent.value.planId),
+            title: newContent.value.title,
+            otherType: newContent.value.otherType,
+            link: newContent.value.link || null,
         });
         otherContent.value.push(createdContent);
         newContent.value = { planId: '', title: '', otherType: '', link: '' };
         error.value = '';
     } catch (err) {
-        error.value = 'Failed to create content: ' + (err.data?.statusMessage || err.message);
+        error.value = err.message || 'Failed to create content';
     }
 }
 
 async function deleteContent(contentId) {
     try {
-        await $fetch(`/api/other-content/${contentId}`, { method: 'DELETE', credentials: 'include' });
+        const user = userStore.user;
+        if (!user) throw new Error('User not authenticated');
+        await deleteOtherContent(contentId, user);
         otherContent.value = otherContent.value.filter((content) => content.contentId !== contentId);
         error.value = '';
     } catch (err) {
-        error.value = 'Failed to delete content: ' + (err.data?.statusMessage || err.message);
+        error.value = err.message || 'Failed to delete content';
     }
 }
 </script>

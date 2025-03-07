@@ -236,8 +236,12 @@ import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
 import Highlight from '@tiptap/extension-highlight';
-import hljs from 'highlight.js'; // Import Highlight.js directly
+import hljs from 'highlight.js';
 import { createLowlight } from 'lowlight';
+import { getNotes, createNote as createNoteAPI, deleteNote as deleteNoteAPI } from '~/client/api/notes';
+import { getStudyPlans } from '~/client/api/study-plans';
+import { getBooks } from '~/client/api/books';
+import { getOtherContents } from '~/client/api/other-content';
 
 // Import Highlight.js languages
 import c from 'highlight.js/lib/languages/c';
@@ -273,9 +277,8 @@ import basic from 'highlight.js/lib/languages/basic';
 import awk from 'highlight.js/lib/languages/awk';
 import angelscript from 'highlight.js/lib/languages/angelscript';
 
-import 'highlight.js/styles/github-dark.css'; // Dark theme for Highlight.js
+import 'highlight.js/styles/github-dark.css';
 
-// Initialize lowlight with Highlight.js
 const lowlight = createLowlight();
 lowlight.register('c', c);
 lowlight.register('cpp', cpp);
@@ -323,9 +326,8 @@ const otherContent = ref([]);
 const newNote = ref({ type: 'book', id: '', content: '' });
 const error = ref('');
 const isCreatingNote = ref(false);
-const filter = ref({ type: '', name: '', id: '' }); // Filter state
+const filter = ref({ type: '', name: '', id: '' });
 
-// TipTap Editor setup with Highlight extension
 const editor = new Editor({
     content: '',
     extensions: [
@@ -335,7 +337,7 @@ const editor = new Editor({
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Placeholder.configure({ placeholder: 'Write here... Markdown supported!' }),
         Image.configure({ inline: true, allowBase64: true }),
-        Highlight.configure({ multicolor: false }), // Added Highlight with default yellow
+        Highlight.configure({ multicolor: false }),
     ],
     onUpdate: ({ editor }) => {
         newNote.value.content = editor.getHTML();
@@ -376,28 +378,23 @@ onMounted(async () => {
         return;
     }
     try {
-        console.log('Fetching data...');
         const [notesData, plansData, booksData, contentData] = await Promise.all([
-            $fetch('/api/notes', { credentials: 'include' }),
-            $fetch('/api/study-plans', { credentials: 'include' }),
-            $fetch('/api/books', { credentials: 'include' }),
-            $fetch('/api/other-content', { credentials: 'include' }),
+            getNotes(userStore.user, {}),
+            getStudyPlans(userStore.user),
+            getBooks(userStore.user),
+            getOtherContents(userStore.user),
         ]);
         notes.value = notesData;
-        filteredNotes.value = notesData; // Initialize filteredNotes
+        filteredNotes.value = notesData;
         studyPlans.value = plansData;
         books.value = booksData;
         otherContent.value = contentData;
-        console.log('Data fetched:', { notesData, plansData, booksData, contentData });
-        // Highlight code blocks after data is loaded
         highlightCodeBlocks();
     } catch (err) {
-        console.error('Fetch error:', err);
-        error.value = 'Failed to load data: ' + (err.data?.statusMessage || err.message);
+        error.value = `Failed to load data: ${err.message}`;
     }
 });
 
-// Watch filteredNotes to reapply highlighting when it changes
 watch(filteredNotes, () => {
     nextTick(() => highlightCodeBlocks());
 });
@@ -411,6 +408,10 @@ function highlightCodeBlocks() {
 }
 
 async function createNote() {
+    if (!userStore.user) {
+        error.value = 'User not authenticated';
+        return;
+    }
     if (!newNote.value.type || !newNote.value.id || !newNote.value.content) {
         error.value = 'All fields are required';
         return;
@@ -422,21 +423,16 @@ async function createNote() {
             ...(newNote.value.type === 'book' && { bookId: Number(newNote.value.id) }),
             ...(newNote.value.type === 'content' && { contentId: Number(newNote.value.id) }),
         };
-        const createdNote = await $fetch('/api/notes', {
-            method: 'POST',
-            body: payload,
-            credentials: 'include',
-        });
+        const createdNote = await createNoteAPI(userStore.user, payload);
         notes.value.push(createdNote);
-        filteredNotes.value = notes.value; // Update filteredNotes
+        filteredNotes.value = notes.value;
         newNote.value = { type: 'book', id: '', content: '' };
         editor.commands.setContent('');
         error.value = '';
         isCreatingNote.value = false;
-        applyFilters(); // Reapply filters after creation
+        applyFilters();
     } catch (err) {
-        console.error('Create note error:', err);
-        error.value = 'Failed to create note: ' + (err.data?.statusMessage || err.message);
+        error.value = `Failed to create note: ${err.message}`;
     }
 }
 
@@ -448,14 +444,17 @@ function cancelNoteCreation() {
 }
 
 async function deleteNote(noteId) {
+    if (!userStore.user) {
+        error.value = 'User not authenticated';
+        return;
+    }
     try {
-        await $fetch(`/api/notes/${noteId}`, { method: 'DELETE', credentials: 'include' });
+        await deleteNoteAPI(noteId, userStore.user);
         notes.value = notes.value.filter((note) => note.noteId !== noteId);
-        applyFilters(); // Reapply filters after deletion
+        applyFilters();
         error.value = '';
     } catch (err) {
-        console.error('Delete note error:', err);
-        error.value = 'Failed to delete note: ' + (err.data?.statusMessage || err.message);
+        error.value = `Failed to delete note: ${err.message}`;
     }
 }
 
@@ -485,7 +484,6 @@ function formatDate(dateStr) {
     return dateStr ? new Date(dateStr).toLocaleDateString() : 'N/A';
 }
 
-// Filter Logic
 function applyFilters() {
     let result = [...notes.value];
 
@@ -520,7 +518,6 @@ function applyFilters() {
 </script>
 
 <style>
-/* Editor Styles */
 .tiptap {
     @apply w-full min-h-[100px] p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 rounded-b-lg focus:outline-none border-t border-gray-300 dark:border-gray-600;
 }
@@ -578,7 +575,6 @@ function applyFilters() {
     @apply bg-yellow-200 dark:bg-yellow-600 text-gray-900 dark:text-gray-200 px-0.5 rounded;
 }
 
-/* Note Content Styles */
 .note-content {
     @apply w-full;
 }
@@ -607,10 +603,8 @@ function applyFilters() {
     @apply bg-gray-100 dark:bg-gray-700 rounded p-2 my-1 font-mono text-xs overflow-auto;
 }
 
-/* Ensure Highlight.js styles are applied */
 .note-content pre code.hljs {
     @apply bg-transparent p-0;
-    /* Reset padding and background to let Highlight.js styles take over */
 }
 
 .note-content ul,

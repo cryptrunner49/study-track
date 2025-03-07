@@ -44,7 +44,7 @@
             <button @click="toggleSection('studyPlans')"
                 class="w-full flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200">
                 <h2 class="text-xl font-semibold dark:text-white">Study Plans ({{ completedPlans }}/{{ studyPlans.length
-                    }})</h2>
+                }})</h2>
                 <span class="text-gray-600 dark:text-gray-300 text-xl">{{ studyPlansOpen ? '−' : '+' }}</span>
             </button>
             <div v-if="studyPlansOpen" class="mt-4 space-y-4">
@@ -61,8 +61,8 @@
                     <p class="text-sm text-gray-600 dark:text-gray-300">{{ plan.description || 'No description' }}</p>
                     <p class="text-sm dark:text-white">
                         Progress: {{ planProgress(plan.planId) }}% (Books: {{ completedBooksInPlan(plan.planId) }}/{{
-                        booksInPlan(plan.planId) }}, Other: {{ completedOtherContentInPlan(plan.planId) }}/{{
-                        otherContentInPlan(plan.planId) }})
+                            booksInPlan(plan.planId) }}, Other: {{ completedOtherContentInPlan(plan.planId) }}/{{
+                            otherContentInPlan(plan.planId) }})
                     </p>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
                         <div :style="{ width: planProgress(plan.planId) + '%' }"
@@ -92,7 +92,7 @@
                     <p class="text-sm text-gray-600 dark:text-gray-300">Author: {{ book.author || 'Unknown' }}</p>
                     <p class="text-sm dark:text-white">
                         Pages: {{ book.currentPage || 0 }} / {{ book.totalPages }} ({{ bookProgress(book.currentPage,
-                        book.totalPages) }}%)
+                            book.totalPages) }}%)
                     </p>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
                         <div :style="{ width: bookProgress(book.currentPage, book.totalPages) + '%' }"
@@ -154,8 +154,10 @@
 import { ref, onMounted, computed } from 'vue';
 import { useUserStore } from '~/stores/user';
 import { useRouter } from 'nuxt/app';
+import { getStudyPlans } from '~/client/api/study-plans';
+import { getBooks } from '~/client/api/books';
+import { getOtherContents } from '~/client/api/other-content';
 
-// Debounce utility
 function debounce(fn, wait) {
     let timeout;
     return (...args) => {
@@ -164,7 +166,6 @@ function debounce(fn, wait) {
     };
 }
 
-// LocalStorage utility functions
 const SECTION_STATES_KEY = 'sectionStates';
 
 function loadSectionStates() {
@@ -193,19 +194,10 @@ const error = ref('');
 const loading = ref(false);
 const cachedDataLoaded = ref(false);
 
-// Initialize section states from localStorage
 const initialStates = loadSectionStates();
 const studyPlansOpen = ref(initialStates.studyPlansOpen);
 const booksOpen = ref(initialStates.booksOpen);
 const otherContentOpen = ref(initialStates.otherContentOpen);
-
-// Use client-side state for caching
-const cachedProgress = useState('progressCache', () => ({
-    studyPlans: [],
-    books: [],
-    otherContent: [],
-    timestamp: 0,
-}));
 
 async function loadData(retryCount = 0) {
     if (!userStore.user) {
@@ -214,31 +206,18 @@ async function loadData(retryCount = 0) {
         return;
     }
 
-    const cacheAge = Date.now() - cachedProgress.value.timestamp;
-    if (cacheAge < 5 * 60 * 1000 && cachedProgress.value.studyPlans.length > 0) {
-        studyPlans.value = cachedProgress.value.studyPlans;
-        books.value = cachedProgress.value.books;
-        otherContent.value = cachedProgress.value.otherContent;
-        cachedDataLoaded.value = true;
-        return;
-    }
-
     loading.value = true;
     error.value = '';
     try {
+        const user = userStore.user;
         const [plansResponse, booksResponse, contentResponse] = await Promise.all([
-            $fetch('/api/study-plans', { credentials: 'include' }),
-            $fetch('/api/books', { credentials: 'include' }),
-            $fetch('/api/other-content', { credentials: 'include' }),
+            getStudyPlans(user),
+            getBooks(user),
+            getOtherContents(user),
         ]);
         studyPlans.value = plansResponse || [];
         books.value = booksResponse || [];
         otherContent.value = contentResponse || [];
-
-        cachedProgress.value.studyPlans = studyPlans.value;
-        cachedProgress.value.books = books.value;
-        cachedProgress.value.otherContent = otherContent.value;
-        cachedProgress.value.timestamp = Date.now();
         cachedDataLoaded.value = true;
     } catch (err) {
         if (retryCount < 3) {
@@ -246,8 +225,7 @@ async function loadData(retryCount = 0) {
             error.value = `Failed to load data (attempt ${retryCount + 1}/3). Retrying in ${delay / 1000}s...`;
             setTimeout(() => loadData(retryCount + 1), delay);
         } else {
-            error.value = 'Failed to load progress data after 3 attempts: ' + (err.data?.statusMessage || err.message);
-            console.error('Fetch error:', err);
+            error.value = err.message || 'Failed to load progress data after 3 attempts';
         }
     } finally {
         loading.value = false;
@@ -255,18 +233,10 @@ async function loadData(retryCount = 0) {
 }
 
 function toggleSection(section) {
-    if (section === 'studyPlans') {
-        studyPlansOpen.value = !studyPlansOpen.value;
-        console.log('studyPlansOpen:', studyPlansOpen.value);
-    } else if (section === 'books') {
-        booksOpen.value = !booksOpen.value;
-        console.log('booksOpen:', booksOpen.value);
-    } else if (section === 'otherContent') {
-        otherContentOpen.value = !otherContentOpen.value;
-        console.log('otherContentOpen:', otherContentOpen.value);
-    }
+    if (section === 'studyPlans') studyPlansOpen.value = !studyPlansOpen.value;
+    else if (section === 'books') booksOpen.value = !booksOpen.value;
+    else if (section === 'otherContent') otherContentOpen.value = !otherContentOpen.value;
 
-    // Save updated states to localStorage
     saveSectionStates({
         studyPlansOpen: studyPlansOpen.value,
         booksOpen: booksOpen.value,
@@ -276,10 +246,8 @@ function toggleSection(section) {
 
 onMounted(() => loadData());
 
-// Debounced retry function
 const retryLoad = debounce(() => loadData(), 500);
 
-// Computed properties for progress metrics
 const completedBooks = computed(() => books.value.filter((book) => (book.currentPage || 0) >= book.totalPages).length);
 const completedOtherContent = computed(() =>
     otherContent.value.filter((content) => isOtherContentCompleted(content.progressNote)).length
@@ -313,7 +281,6 @@ const overallOtherContentProgress = computed(() => {
     return Math.round(totalProgress / otherContent.value.length) || 0;
 });
 
-// Helper functions
 function bookProgress(currentPage, totalPages) {
     return totalPages ? Math.round(((currentPage || 0) / totalPages) * 100) : 0;
 }

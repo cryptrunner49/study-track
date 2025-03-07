@@ -1,6 +1,6 @@
 <template>
     <div class="flex items-center justify-center min-h-screen">
-        <form @submit.prevent="login" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md w-full max-w-md">
+        <form @submit.prevent="loginUser" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md w-full max-w-md">
             <h1 class="text-2xl font-bold mb-6 dark:text-white">Login</h1>
             <div class="space-y-4">
                 <div>
@@ -29,6 +29,7 @@
 import { ref } from 'vue';
 import { useUserStore } from '~/stores/user';
 import { useRouter } from 'nuxt/app';
+import { login } from '~/client/api/auth';
 
 const email = ref('');
 const password = ref('');
@@ -36,17 +37,13 @@ const error = ref('');
 const userStore = useUserStore();
 const router = useRouter();
 
-async function login() {
+async function loginUser() {
     try {
-        const userData = await $fetch('/api/login', {
-            method: 'POST',
-            body: { email: email.value, password: password.value },
-            credentials: 'include',
-        });
-        userStore.setUser(userData);
+        const { user, token } = await login({ email: email.value, password: password.value });
+        userStore.setUser({ ...user, token }); // Store token with user
         router.push('/');
     } catch (err) {
-        error.value = err.data?.statusMessage || 'Login failed: An unexpected error occurred';
+        error.value = err.message || 'Login failed';
     }
 }
 </script>

@@ -55,6 +55,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useUserStore } from '~/stores/user';
+import { getStudyPlans } from '~/client/api/study-plans';
+import { getBooks } from '~/client/api/books';
+import { getOtherContents } from '~/client/api/other-content';
 
 const userStore = useUserStore();
 const studyPlans = ref([]);
@@ -63,46 +66,23 @@ const otherContent = ref([]);
 const loading = ref(false);
 const error = ref('');
 
-// Use client-side state for caching
-const cachedDashboard = useState('dashboardCache', () => ({
-    studyPlans: [],
-    books: [],
-    otherContent: [],
-    timestamp: 0,
-}));
-
 async function loadDashboardData() {
     if (!userStore.user) return;
-
-    // Use cached data if recent (e.g., within 5 minutes)
-    const cacheAge = Date.now() - cachedDashboard.value.timestamp;
-    if (cacheAge < 5 * 60 * 1000 && cachedDashboard.value.studyPlans.length > 0) {
-        studyPlans.value = cachedDashboard.value.studyPlans;
-        books.value = cachedDashboard.value.books;
-        otherContent.value = cachedDashboard.value.otherContent;
-        return;
-    }
 
     loading.value = true;
     error.value = '';
     try {
+        const user = userStore.user;
         const [plansResponse, booksResponse, contentResponse] = await Promise.all([
-            $fetch('/api/study-plans', { credentials: 'include' }),
-            $fetch('/api/books', { credentials: 'include' }), // No planId to fetch all
-            $fetch('/api/other-content', { credentials: 'include' }), // No planId to fetch all
+            getStudyPlans(user),
+            getBooks(user),
+            getOtherContents(user),
         ]);
         studyPlans.value = plansResponse || [];
         books.value = booksResponse || [];
         otherContent.value = contentResponse || [];
-
-        // Update cache
-        cachedDashboard.value.studyPlans = studyPlans.value;
-        cachedDashboard.value.books = books.value;
-        cachedDashboard.value.otherContent = otherContent.value;
-        cachedDashboard.value.timestamp = Date.now();
     } catch (err) {
-        error.value = 'Failed to load dashboard data: ' + (err.data?.statusMessage || err.message);
-        console.error('Fetch error:', err);
+        error.value = err.message || 'Failed to load dashboard data';
     } finally {
         loading.value = false;
     }

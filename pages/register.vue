@@ -1,6 +1,6 @@
 <template>
     <div class="flex items-center justify-center min-h-screen">
-        <form @submit.prevent="register" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md w-full max-w-md">
+        <form @submit.prevent="registerUser" class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md w-full max-w-md">
             <h1 class="text-3xl font-bold mb-6 dark:text-white">Register</h1>
             <div class="space-y-4">
                 <div>
@@ -36,6 +36,7 @@
 import { ref } from 'vue';
 import { useUserStore } from '~/stores/user';
 import { useRouter } from 'nuxt/app';
+import { register } from '~/client/api/auth';
 
 const name = ref('');
 const email = ref('');
@@ -44,18 +45,13 @@ const error = ref('');
 const userStore = useUserStore();
 const router = useRouter();
 
-async function register() {
+async function registerUser() {
     try {
-        const response = await $fetch('/api/register', {
-            method: 'POST',
-            body: { name: name.value, email: email.value, password: password.value },
-            credentials: 'include', // Ensure cookies are sent if needed later
-        });
-        userStore.setUser(response);
+        const user = await register({ name: name.value, email: email.value, password: password.value });
+        userStore.setUser(user);
         router.push('/');
     } catch (err) {
-        // Display server-provided error message or fallback to generic
-        error.value = err.data?.statusMessage || 'Registration failed: An unexpected error occurred';
+        error.value = err.message || 'Registration failed';
     }
 }
 </script>

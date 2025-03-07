@@ -142,7 +142,7 @@ import Highlight from '@tiptap/extension-highlight';
 import { createLowlight } from 'lowlight';
 import hljs from 'highlight.js';
 
-// Import Highlight.js languages (same as index.vue)
+// Import Highlight.js languages
 import c from 'highlight.js/lib/languages/c';
 import cpp from 'highlight.js/lib/languages/cpp';
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -176,9 +176,12 @@ import basic from 'highlight.js/lib/languages/basic';
 import awk from 'highlight.js/lib/languages/awk';
 import angelscript from 'highlight.js/lib/languages/angelscript';
 
-import 'highlight.js/styles/github-dark.css'; // Dark theme for Highlight.js
+import 'highlight.js/styles/github-dark.css';
+import { getNote, updateNote as updateNoteAPI } from '~/client/api/notes';
+import { getStudyPlans } from '~/client/api/study-plans';
+import { getBooks } from '~/client/api/books';
+import { getOtherContents } from '~/client/api/other-content';
 
-// Initialize lowlight with Highlight.js
 const lowlight = createLowlight();
 lowlight.register('c', c);
 lowlight.register('cpp', cpp);
@@ -226,7 +229,6 @@ const books = ref([]);
 const otherContent = ref([]);
 const error = ref('');
 
-// TipTap Editor setup
 const editor = new Editor({
   content: '',
   extensions: [
@@ -252,26 +254,27 @@ const associationLabel = computed(() => {
 onMounted(async () => {
   if (!userStore.user) {
     error.value = 'User not authenticated';
+    router.push('/login');
     return;
   }
   try {
     const [fetchedNote, plansData, booksData, contentData] = await Promise.all([
-      $fetch(`/api/notes/${route.params.id}`, { credentials: 'include' }),
-      $fetch('/api/study-plans', { credentials: 'include' }),
-      $fetch('/api/books', { credentials: 'include' }),
-      $fetch('/api/other-content', { credentials: 'include' }),
+      getNote(route.params.id, userStore.user),
+      getStudyPlans(userStore.user),
+      getBooks(userStore.user),
+      getOtherContents(userStore.user),
     ]);
     note.value = {
       content: fetchedNote.content,
       type: fetchedNote.planId ? 'plan' : fetchedNote.bookId ? 'book' : 'content',
       id: fetchedNote.planId || fetchedNote.bookId || fetchedNote.contentId || '',
     };
-    editor.commands.setContent(fetchedNote.content); // Load existing content into editor
+    editor.commands.setContent(fetchedNote.content);
     studyPlans.value = plansData;
     books.value = booksData;
     otherContent.value = contentData;
   } catch (err) {
-    error.value = 'Failed to load note: ' + (err.data?.statusMessage || err.message);
+    error.value = `Failed to load note: ${err.message}`;
   }
 });
 
@@ -280,6 +283,10 @@ onBeforeUnmount(() => {
 });
 
 async function updateNote() {
+  if (!userStore.user) {
+    error.value = 'User not authenticated';
+    return;
+  }
   if (!note.value.type || !note.value.id || !note.value.content) {
     error.value = 'All fields are required';
     return;
@@ -291,15 +298,11 @@ async function updateNote() {
       ...(note.value.type === 'book' && { bookId: Number(note.value.id) }),
       ...(note.value.type === 'content' && { contentId: Number(note.value.id) }),
     };
-    await $fetch(`/api/notes/${route.params.id}`, {
-      method: 'PUT',
-      body: payload,
-      credentials: 'include',
-    });
+    await updateNoteAPI(route.params.id, userStore.user, payload);
     error.value = '';
     router.push('/notes');
   } catch (err) {
-    error.value = 'Failed to update note: ' + (err.data?.statusMessage || err.message);
+    error.value = `Failed to update note: ${err.message}`;
   }
 }
 
@@ -332,7 +335,6 @@ function addImage() {
 </script>
 
 <style>
-/* Editor Styles (copied from index.vue for consistency) */
 .tiptap {
   @apply w-full min-h-[100px] p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 rounded-b-lg focus:outline-none border-t border-gray-300 dark:border-gray-600;
 }

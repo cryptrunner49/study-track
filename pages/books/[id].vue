@@ -41,6 +41,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'nuxt/app';
+import { useUserStore } from '~/stores/user';
+import { getBook, updateBook as updateBookAPI } from '~/client/api/books';
 
 definePageMeta({
     middleware: ['auth'],
@@ -48,34 +50,40 @@ definePageMeta({
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 const book = ref({});
 const error = ref('');
 
 onMounted(async () => {
+    if (!userStore.user) {
+        error.value = 'User not authenticated';
+        router.push('/login');
+        return;
+    }
     try {
-        book.value = await $fetch(`/api/books/${route.params.id}`, { credentials: 'include' });
+        book.value = await getBook(route.params.id, userStore.user);
     } catch (err) {
-        error.value = 'Failed to load book: ' + (err.data?.statusMessage || err.message);
+        error.value = `Failed to load book: ${err.message}`;
     }
 });
 
 async function updateBook() {
+    if (!userStore.user) {
+        error.value = 'User not authenticated';
+        return;
+    }
     try {
-        const updatedBook = await $fetch(`/api/books/${route.params.id}`, {
-            method: 'PUT',
-            body: {
-                title: book.value.title,
-                author: book.value.author || null,
-                totalPages: Number(book.value.totalPages),
-                currentPage: Number(book.value.currentPage),
-            },
-            credentials: 'include',
+        const updatedBook = await updateBookAPI(route.params.id, userStore.user, {
+            title: book.value.title,
+            author: book.value.author || null,
+            totalPages: Number(book.value.totalPages),
+            currentPage: Number(book.value.currentPage),
         });
         book.value = updatedBook;
         error.value = '';
         router.push('/books');
     } catch (err) {
-        error.value = 'Failed to update book: ' + (err.data?.statusMessage || err.message);
+        error.value = `Failed to update book: ${err.message}`;
     }
 }
 </script>

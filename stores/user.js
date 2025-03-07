@@ -5,11 +5,14 @@ export const useUserStore = defineStore('user', {
         user: null,
     }),
     actions: {
-        setUser(userData) {
-            this.user = userData;
+        setUser(user) {
+            this.user = user;
         },
-        logout() {
+        clearUser() {
             this.user = null;
         },
+    },
+    persist: {
+        storage: localStorage, // Persist user state across refreshes
     },
 });
