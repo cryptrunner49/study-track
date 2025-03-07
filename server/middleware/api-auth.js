@@ -1,11 +1,9 @@
-// server/middleware/api-auth.js
 import { getCookie, createError, defineEventHandler } from 'h3';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export default defineEventHandler((event) => {
-    // Skip auth for public routes
     const publicRoutes = ['/api/login', '/api/logout'];
     if (publicRoutes.some((route) => event.node.req.url.startsWith(route))) {
         return;

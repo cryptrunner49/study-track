@@ -1,4 +1,3 @@
-// server/api/books/[id].put.js
 import db from '../../db';
 
 export default defineEventHandler(async (event) => {

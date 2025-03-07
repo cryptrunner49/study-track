@@ -1,4 +1,3 @@
-// server/api/books.get.js
 import db from '../db';
 import { defineEventHandler, createError } from 'h3';
 

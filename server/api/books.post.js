@@ -1,4 +1,3 @@
-// server/api/books.post.js
 import db from '../db';
 
 export default defineEventHandler(async (event) => {

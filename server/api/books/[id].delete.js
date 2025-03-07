@@ -1,4 +1,3 @@
-// server/api/books/[id].delete.js
 import db from '../../db';
 
 export default defineEventHandler((event) => {

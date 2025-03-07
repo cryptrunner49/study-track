@@ -1,4 +1,3 @@
-// server/api/other-content/[id].get.js
 import db from '../../db';
 
 export default defineEventHandler((event) => {
