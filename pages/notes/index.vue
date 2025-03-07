@@ -66,9 +66,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div v-for="note in filteredNotes" :key="note.noteId"
                     class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-4 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                    <div class="note-content mb-3 dark:text-gray-200 text-sm">
-                        <div v-html="note.content"></div>
-                    </div>
+                    <div class="note-content mb-3 dark:text-gray-200 text-sm" v-html="note.content"></div>
                     <div
                         class="flex flex-col sm:flex-row sm:justify-between sm:items-center border-t dark:border-gray-700 pt-3 text-xs text-gray-600 dark:text-gray-400">
                         <div class="space-y-1 sm:space-y-0 sm:space-x-4">
@@ -159,6 +157,11 @@
                                 class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 transition-colors">
                                 <code>Code</code>
                             </button>
+                            <button type="button" @click="editor.chain().focus().toggleHighlight().run()"
+                                :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('highlight') }"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 transition-colors">
+                                <span>✨</span>
+                            </button>
                             <button type="button" @click="addImage"
                                 class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 transition-colors">
                                 <span>🖼️</span>
@@ -192,6 +195,11 @@
                                 :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('codeBlock') }"
                                 class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
                                 <code>Code</code>
+                            </button>
+                            <button @click="editor.chain().focus().toggleHighlight().run()"
+                                :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('highlight') }"
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
+                                <span>✨</span>
                             </button>
                             <button @click="addImage"
                                 class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500">
@@ -227,6 +235,7 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
+import Highlight from '@tiptap/extension-highlight'; // Added Highlight extension
 import { createLowlight } from 'lowlight';
 
 // Import Highlight.js languages
@@ -315,7 +324,7 @@ const error = ref('');
 const isCreatingNote = ref(false);
 const filter = ref({ type: '', name: '', id: '' }); // Filter state
 
-// TipTap Editor setup
+// TipTap Editor setup with Highlight extension
 const editor = new Editor({
     content: '',
     extensions: [
@@ -325,6 +334,7 @@ const editor = new Editor({
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         Placeholder.configure({ placeholder: 'Write here... Markdown supported!' }),
         Image.configure({ inline: true, allowBase64: true }),
+        Highlight.configure({ multicolor: false }), // Added Highlight with default yellow
     ],
     onUpdate: ({ editor }) => {
         newNote.value.content = editor.getHTML();
@@ -548,6 +558,10 @@ function applyFilters() {
     @apply max-w-full h-auto my-1 rounded;
 }
 
+.tiptap mark {
+    @apply bg-yellow-200 dark:bg-yellow-600 text-gray-900 dark:text-gray-200 px-0.5 rounded;
+}
+
 /* Note Content Styles */
 .note-content {
     @apply w-full;
@@ -592,5 +606,9 @@ function applyFilters() {
 
 .note-content img {
     @apply max-w-full h-auto my-1 rounded;
+}
+
+.note-content mark {
+    @apply bg-yellow-200 dark:bg-yellow-600 text-gray-900 dark:text-gray-200 px-0.5 rounded;
 }
 </style>
