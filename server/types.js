@@ -1,7 +1,7 @@
 export const OtherType = {
     COURSE: 'course',
     VIDEO: 'video',
-    ARTICLE: 'article',
+    PAPER: 'paper',
     BLOG: 'blog',
     OTHER: 'other',
 };

@@ -59,7 +59,7 @@ const db = new sqlite3.Database('./studytrack.db', sqlite3.OPEN_READWRITE | sqli
           contentId INTEGER PRIMARY KEY AUTOINCREMENT,
           planId INTEGER NOT NULL,
           title TEXT NOT NULL,
-          otherType TEXT NOT NULL CHECK (otherType IN ('video', 'article', 'course', 'podcast', 'document')),
+          otherType TEXT NOT NULL CHECK (otherType IN ('course', 'video', 'paper', 'blog', 'other')),
           link TEXT,
           progressNote TEXT,
           FOREIGN KEY (planId) REFERENCES StudyPlans(planId)

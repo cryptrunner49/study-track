@@ -1,6 +1,6 @@
 import db from '../db';
 import { defineEventHandler, readBody, createError } from 'h3';
-import { OtherType, OtherTypeValues } from '../types';
+import { OtherTypeValues } from '../types';
 
 export default defineEventHandler(async (event) => {
     const user = event.context.user;
@@ -26,23 +26,39 @@ export default defineEventHandler(async (event) => {
 
     // Validate planId ownership
     const plan = await new Promise((resolve, reject) =>
-        db.get('SELECT userId FROM StudyPlans WHERE planId = ?', [planId], (err, row) =>
+        db.get('SELECT userId FROM StudyPlans WHERE planId = ?', [Number(planId)], (err, row) =>
             err ? reject(err) : resolve(row)
         )
     );
     if (!plan || plan.userId !== user.userId) {
-        throw createError({ statusCode: 403, statusMessage: 'Forbidden: Invalid planId' });
+        throw createError({ statusCode: 403, statusMessage: 'Forbidden: Invalid or unauthorized planId' });
     }
 
     return new Promise((resolve, reject) => {
         db.run(
             'INSERT INTO OtherContent (planId, title, otherType, link) VALUES (?, ?, ?, ?)',
-            [planId, title, otherType, link],
+            [Number(planId), title, otherType, link || null], // Ensure planId is a number, link can be null
             function (err) {
                 if (err) {
-                    reject(createError({ statusCode: 500, statusMessage: 'Failed to create content' }));
+                    console.error('Create OtherContent error:', { planId, title, otherType, link, message: err.message });
+                    if (err.message.includes('FOREIGN KEY constraint failed')) {
+                        reject(
+                            createError({
+                                statusCode: 400,
+                                statusMessage: 'Invalid planId: No matching study plan exists',
+                            })
+                        );
+                    } else {
+                        reject(
+                            createError({
+                                statusCode: 500,
+                                statusMessage: `Failed to create content: ${err.message}`,
+                            })
+                        );
+                    }
                 } else {
-                    resolve({ contentId: this.lastID, planId, title, otherType, link });
+                    console.log('Content created:', { contentId: this.lastID, planId, title, otherType });
+                    resolve({ contentId: this.lastID, planId: Number(planId), title, otherType, link });
                 }
             }
         );

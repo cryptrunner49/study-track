@@ -43,7 +43,7 @@
                 <div>
                     <label for="planId" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Study
                         Plan</label>
-                    <select id="planId" v-model="newContent.planId"
+                    <select id="planId" v-model.number="newContent.planId"
                         class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required>
                         <option value="" disabled>Select a Study Plan</option>
@@ -110,7 +110,12 @@ async function createContent() {
     try {
         const createdContent = await $fetch('/api/other-content', {
             method: 'POST',
-            body: newContent.value,
+            body: {
+                planId: Number(newContent.value.planId), // Ensure planId is a number
+                title: newContent.value.title,
+                otherType: newContent.value.otherType,
+                link: newContent.value.link || null,
+            },
             credentials: 'include',
         });
         otherContent.value.push(createdContent);

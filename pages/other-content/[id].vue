@@ -35,7 +35,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'nuxt/app';
+import { useRoute, useRouter } from 'nuxt/app';
 import { OtherTypeValues } from '~/server/types';
 
 definePageMeta({
@@ -43,6 +43,7 @@ definePageMeta({
 });
 
 const route = useRoute();
+const router = useRouter(); // Add router for navigation
 const content = ref({});
 const error = ref('');
 const otherTypes = ref(OtherTypeValues);
@@ -64,6 +65,8 @@ async function updateContent() {
         });
         content.value = updatedContent;
         error.value = '';
+        // Redirect back to the other-content index page after successful update
+        router.push('/other-content');
     } catch (err) {
         error.value = 'Failed to update content: ' + (err.data?.statusMessage || err.message);
     }
