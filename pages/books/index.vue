@@ -20,7 +20,7 @@
                         <td class="px-6 py-4 dark:text-white">{{ book.author || 'Unknown' }}</td>
                         <td class="px-6 py-4 dark:text-white">{{ book.currentPage || 0 }} / {{ book.totalPages }}</td>
                         <td class="px-6 py-4 space-x-4">
-                            <NuxtLink :to="`/books/${book.bookId}`" class="text-blue-500 hover:underline">View
+                            <NuxtLink :to="`/books/${book.bookId}`" class="text-blue-500 hover:underline">Edit
                             </NuxtLink>
                             <NuxtLink :to="`/books/reading-plan/${book.bookId}`" class="text-blue-500 hover:underline">
                                 {{ book.hasReadingPlan ? 'Edit Reading Plan' : 'Add Reading Plan' }}

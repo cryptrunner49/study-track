@@ -40,21 +40,22 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'nuxt/app';
+import { useRoute, useRouter } from 'nuxt/app';
 
 definePageMeta({
     middleware: ['auth'],
 });
 
 const route = useRoute();
+const router = useRouter(); // Add router for navigation
 const book = ref({});
 const error = ref('');
 
 onMounted(async () => {
     try {
-        book.value = await $fetch(`/api/books/${route.params.id}`);
+        book.value = await $fetch(`/api/books/${route.params.id}`, { credentials: 'include' });
     } catch (err) {
-        error.value = 'Failed to load book: ' + err.message;
+        error.value = 'Failed to load book: ' + (err.data?.statusMessage || err.message);
     }
 });
 
@@ -68,11 +69,14 @@ async function updateBook() {
                 totalPages: Number(book.value.totalPages),
                 currentPage: Number(book.value.currentPage),
             },
+            credentials: 'include',
         });
         book.value = updatedBook;
         error.value = '';
+        // Redirect back to the books index page after successful update
+        router.push('/books');
     } catch (err) {
-        error.value = 'Failed to update book: ' + err.message;
+        error.value = 'Failed to update book: ' + (err.data?.statusMessage || err.message);
     }
 }
 </script>
