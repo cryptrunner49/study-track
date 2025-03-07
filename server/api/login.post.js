@@ -20,15 +20,15 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 401, statusMessage: 'Invalid credentials' });
     }
 
-    // Generate JWT token
-    const token = jwt.sign({ userId: user.userId, email: user.email }, JWT_SECRET, { expiresIn: '1h' });
+    // Generate JWT token with no expiration
+    const token = jwt.sign({ userId: user.userId, email: user.email }, JWT_SECRET);
 
-    // Set the auth cookie
+    // Set the auth cookie with a very large maxAge (10 years)
     setCookie(event, 'auth_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 60 * 60, // 1 hour
+        maxAge: 10 * 365 * 24 * 60 * 60, // 10 years in seconds
     });
 
     return { userId: user.userId, email: user.email };
