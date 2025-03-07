@@ -25,6 +25,14 @@
                     <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4"></div>
                 </div>
             </div>
+            <!-- Error Display -->
+            <div v-else-if="error" class="p-4 bg-red-100 dark:bg-red-900 rounded-lg shadow-md text-center">
+                <p class="text-red-700 dark:text-red-300 font-medium">{{ error }}</p>
+                <button @click="loadDashboardData"
+                    class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200">
+                    Retry
+                </button>
+            </div>
             <!-- Dashboard Content -->
             <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="bg-white dark:bg-gray-800 p-4 rounded shadow">
@@ -53,6 +61,7 @@ const studyPlans = ref([]);
 const books = ref([]);
 const otherContent = ref([]);
 const loading = ref(false);
+const error = ref('');
 
 // Use client-side state for caching
 const cachedDashboard = useState('dashboardCache', () => ({
@@ -75,11 +84,12 @@ async function loadDashboardData() {
     }
 
     loading.value = true;
+    error.value = '';
     try {
         const [plansResponse, booksResponse, contentResponse] = await Promise.all([
             $fetch('/api/study-plans', { credentials: 'include' }),
-            $fetch('/api/books', { credentials: 'include' }),
-            $fetch('/api/other-content', { credentials: 'include' }),
+            $fetch('/api/books', { credentials: 'include' }), // No planId to fetch all
+            $fetch('/api/other-content', { credentials: 'include' }), // No planId to fetch all
         ]);
         studyPlans.value = plansResponse || [];
         books.value = booksResponse || [];
@@ -91,7 +101,8 @@ async function loadDashboardData() {
         cachedDashboard.value.otherContent = otherContent.value;
         cachedDashboard.value.timestamp = Date.now();
     } catch (err) {
-        console.error('Failed to load dashboard data:', err);
+        error.value = 'Failed to load dashboard data: ' + (err.data?.statusMessage || err.message);
+        console.error('Fetch error:', err);
     } finally {
         loading.value = false;
     }

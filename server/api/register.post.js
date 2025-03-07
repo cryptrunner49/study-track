@@ -1,4 +1,3 @@
-// server/api/register.post.js
 import db from '~/server/db';
 import bcrypt from 'bcrypt';
 import { defineEventHandler, readBody, createError } from 'h3';

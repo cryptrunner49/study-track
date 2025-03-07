@@ -33,8 +33,8 @@
                     <p class="text-3xl font-bold">{{ completedBooks }} / {{ books.length }}</p>
                 </div>
                 <div>
-                    <p class="text-lg">Other Content</p>
-                    <p class="text-3xl font-bold">{{ otherContent.length }}</p>
+                    <p class="text-lg">Other Content Completed</p>
+                    <p class="text-3xl font-bold">{{ completedOtherContent }} / {{ otherContent.length }}</p>
                 </div>
             </div>
         </div>
@@ -48,14 +48,21 @@
                 <span class="text-gray-600 dark:text-gray-300 text-xl">{{ studyPlansOpen ? '−' : '+' }}</span>
             </button>
             <div v-if="studyPlansOpen" class="mt-4 space-y-4">
+                <div class="flex items-center justify-between">
+                    <p class="dark:text-white">Overall Study Plans Progress: {{ overallStudyPlansProgress }}%</p>
+                    <div class="w-1/2 bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div :style="{ width: overallStudyPlansProgress + '%' }" class="bg-blue-500 h-2.5 rounded-full">
+                        </div>
+                    </div>
+                </div>
                 <div v-for="plan in studyPlans" :key="plan.planId"
                     class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                     <h3 class="text-lg font-medium dark:text-white">{{ plan.title }}</h3>
                     <p class="text-sm text-gray-600 dark:text-gray-300">{{ plan.description || 'No description' }}</p>
                     <p class="text-sm dark:text-white">
                         Progress: {{ planProgress(plan.planId) }}% (Books: {{ completedBooksInPlan(plan.planId) }}/{{
-                            booksInPlan(plan.planId)
-                        }})
+                        booksInPlan(plan.planId) }}, Other: {{ completedOtherContentInPlan(plan.planId) }}/{{
+                        otherContentInPlan(plan.planId) }})
                     </p>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
                         <div :style="{ width: planProgress(plan.planId) + '%' }"
@@ -84,9 +91,8 @@
                     <h3 class="text-lg font-medium dark:text-white">{{ book.title }}</h3>
                     <p class="text-sm text-gray-600 dark:text-gray-300">Author: {{ book.author || 'Unknown' }}</p>
                     <p class="text-sm dark:text-white">
-                        Pages: {{ book.currentPage || 0 }} / {{ book.totalPages }} ({{
-                            bookProgress(book.currentPage, book.totalPages)
-                        }}%)
+                        Pages: {{ book.currentPage || 0 }} / {{ book.totalPages }} ({{ bookProgress(book.currentPage,
+                        book.totalPages) }}%)
                     </p>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
                         <div :style="{ width: bookProgress(book.currentPage, book.totalPages) + '%' }"
@@ -101,10 +107,18 @@
         <div v-if="!error" class="mb-8">
             <button @click="toggleSection('otherContent')"
                 class="w-full flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200">
-                <h2 class="text-xl font-semibold dark:text-white">Other Content ({{ otherContent.length }})</h2>
+                <h2 class="text-xl font-semibold dark:text-white">Other Content ({{ completedOtherContent }}/{{
+                    otherContent.length }})</h2>
                 <span class="text-gray-600 dark:text-gray-300 text-xl">{{ otherContentOpen ? '−' : '+' }}</span>
             </button>
             <div v-if="otherContentOpen" class="mt-4 space-y-4">
+                <div class="flex items-center justify-between">
+                    <p class="dark:text-white">Overall Other Content Progress: {{ overallOtherContentProgress }}%</p>
+                    <div class="w-1/2 bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div :style="{ width: overallOtherContentProgress + '%' }"
+                            class="bg-blue-500 h-2.5 rounded-full"></div>
+                    </div>
+                </div>
                 <div v-for="content in otherContent" :key="content.contentId"
                     class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                     <h3 class="text-lg font-medium dark:text-white">{{ content.title }}</h3>
@@ -113,7 +127,14 @@
                         class="text-blue-500 hover:underline text-sm">
                         View Content
                     </a>
-                    <p class="text-sm dark:text-white">Progress: Not tracked</p>
+                    <p class="text-sm dark:text-white">
+                        Progress: {{ otherContentProgress(content.progressNote) }}%
+                    </p>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
+                        <div :style="{ width: otherContentProgress(content.progressNote) + '%' }"
+                            :class="isOtherContentCompleted(content.progressNote) ? 'bg-green-500' : 'bg-blue-500'"
+                            class="h-2.5 rounded-full"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -143,6 +164,22 @@ function debounce(fn, wait) {
     };
 }
 
+// LocalStorage utility functions
+const SECTION_STATES_KEY = 'sectionStates';
+
+function loadSectionStates() {
+    const savedStates = localStorage.getItem(SECTION_STATES_KEY);
+    return savedStates ? JSON.parse(savedStates) : {
+        studyPlansOpen: false,
+        booksOpen: true,
+        otherContentOpen: false
+    };
+}
+
+function saveSectionStates(states) {
+    localStorage.setItem(SECTION_STATES_KEY, JSON.stringify(states));
+}
+
 definePageMeta({
     middleware: ['auth'],
 });
@@ -155,9 +192,12 @@ const otherContent = ref([]);
 const error = ref('');
 const loading = ref(false);
 const cachedDataLoaded = ref(false);
-const studyPlansOpen = ref(false);
-const booksOpen = ref(true);
-const otherContentOpen = ref(false);
+
+// Initialize section states from localStorage
+const initialStates = loadSectionStates();
+const studyPlansOpen = ref(initialStates.studyPlansOpen);
+const booksOpen = ref(initialStates.booksOpen);
+const otherContentOpen = ref(initialStates.otherContentOpen);
 
 // Use client-side state for caching
 const cachedProgress = useState('progressCache', () => ({
@@ -174,7 +214,6 @@ async function loadData(retryCount = 0) {
         return;
     }
 
-    // Use cached data if recent (e.g., within 5 minutes)
     const cacheAge = Date.now() - cachedProgress.value.timestamp;
     if (cacheAge < 5 * 60 * 1000 && cachedProgress.value.studyPlans.length > 0) {
         studyPlans.value = cachedProgress.value.studyPlans;
@@ -187,26 +226,23 @@ async function loadData(retryCount = 0) {
     loading.value = true;
     error.value = '';
     try {
-        // Incremental loading with priority on study plans
-        const plansResponse = await $fetch('/api/study-plans', { credentials: 'include' });
-        studyPlans.value = plansResponse || [];
-        cachedProgress.value.studyPlans = studyPlans.value;
-
-        const [booksResponse, contentResponse] = await Promise.all([
+        const [plansResponse, booksResponse, contentResponse] = await Promise.all([
+            $fetch('/api/study-plans', { credentials: 'include' }),
             $fetch('/api/books', { credentials: 'include' }),
             $fetch('/api/other-content', { credentials: 'include' }),
         ]);
+        studyPlans.value = plansResponse || [];
         books.value = booksResponse || [];
         otherContent.value = contentResponse || [];
 
-        // Update cache
+        cachedProgress.value.studyPlans = studyPlans.value;
         cachedProgress.value.books = books.value;
         cachedProgress.value.otherContent = otherContent.value;
         cachedProgress.value.timestamp = Date.now();
         cachedDataLoaded.value = true;
     } catch (err) {
         if (retryCount < 3) {
-            const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
+            const delay = Math.pow(2, retryCount) * 1000;
             error.value = `Failed to load data (attempt ${retryCount + 1}/3). Retrying in ${delay / 1000}s...`;
             setTimeout(() => loadData(retryCount + 1), delay);
         } else {
@@ -218,28 +254,64 @@ async function loadData(retryCount = 0) {
     }
 }
 
+function toggleSection(section) {
+    if (section === 'studyPlans') {
+        studyPlansOpen.value = !studyPlansOpen.value;
+        console.log('studyPlansOpen:', studyPlansOpen.value);
+    } else if (section === 'books') {
+        booksOpen.value = !booksOpen.value;
+        console.log('booksOpen:', booksOpen.value);
+    } else if (section === 'otherContent') {
+        otherContentOpen.value = !otherContentOpen.value;
+        console.log('otherContentOpen:', otherContentOpen.value);
+    }
+
+    // Save updated states to localStorage
+    saveSectionStates({
+        studyPlansOpen: studyPlansOpen.value,
+        booksOpen: booksOpen.value,
+        otherContentOpen: otherContentOpen.value
+    });
+}
+
 onMounted(() => loadData());
 
 // Debounced retry function
 const retryLoad = debounce(() => loadData(), 500);
 
-function toggleSection(section) {
-    if (section === 'studyPlans') studyPlansOpen.value = !studyPlansOpen.value;
-    if (section === 'books') booksOpen.value = !booksOpen.value;
-    if (section === 'otherContent') otherContentOpen.value = !otherContentOpen.value;
-}
-
 // Computed properties for progress metrics
 const completedBooks = computed(() => books.value.filter((book) => (book.currentPage || 0) >= book.totalPages).length);
+const completedOtherContent = computed(() =>
+    otherContent.value.filter((content) => isOtherContentCompleted(content.progressNote)).length
+);
+const completedPlans = computed(() =>
+    studyPlans.value.filter((plan) => {
+        const totalBooks = booksInPlan(plan.planId);
+        const totalOtherContent = otherContentInPlan(plan.planId);
+        const completedBooksCount = completedBooksInPlan(plan.planId);
+        const completedOtherContentCount = completedOtherContentInPlan(plan.planId);
+        return (totalBooks + totalOtherContent) > 0 && (completedBooksCount + completedOtherContentCount) === (totalBooks + totalOtherContent);
+    }).length
+);
+
 const overallBookProgress = computed(() => {
     if (books.value.length === 0) return 0;
     const totalPages = books.value.reduce((sum, book) => sum + book.totalPages, 0);
     const pagesRead = books.value.reduce((sum, book) => sum + (book.currentPage || 0), 0);
     return Math.round((pagesRead / totalPages) * 100) || 0;
 });
-const completedPlans = computed(() =>
-    studyPlans.value.filter((plan) => booksInPlan(plan.planId) > 0 && completedBooksInPlan(plan.planId) === booksInPlan(plan.planId)).length
-);
+
+const overallStudyPlansProgress = computed(() => {
+    if (studyPlans.value.length === 0) return 0;
+    const totalProgress = studyPlans.value.reduce((sum, plan) => sum + planProgress(plan.planId), 0);
+    return Math.round(totalProgress / studyPlans.value.length) || 0;
+});
+
+const overallOtherContentProgress = computed(() => {
+    if (otherContent.value.length === 0) return 0;
+    const totalProgress = otherContent.value.reduce((sum, content) => sum + otherContentProgress(content.progressNote), 0);
+    return Math.round(totalProgress / otherContent.value.length) || 0;
+});
 
 // Helper functions
 function bookProgress(currentPage, totalPages) {
@@ -254,10 +326,31 @@ function completedBooksInPlan(planId) {
     return books.value.filter((book) => book.planId === planId && (book.currentPage || 0) >= book.totalPages).length;
 }
 
+function otherContentInPlan(planId) {
+    return otherContent.value.filter((content) => content.planId === planId).length;
+}
+
+function completedOtherContentInPlan(planId) {
+    return otherContent.value.filter((content) => content.planId === planId && isOtherContentCompleted(content.progressNote)).length;
+}
+
+function isOtherContentCompleted(progressNote) {
+    const completedStatuses = ['Complete', 'Completed', 'OK'];
+    return progressNote && completedStatuses.includes(progressNote.trim());
+}
+
+function otherContentProgress(progressNote) {
+    return isOtherContentCompleted(progressNote) ? 100 : 0;
+}
+
 function planProgress(planId) {
     const totalBooks = booksInPlan(planId);
-    if (totalBooks === 0) return 0;
-    const completed = completedBooksInPlan(planId);
-    return Math.round((completed / totalBooks) * 100);
+    const totalOtherContent = otherContentInPlan(planId);
+    const totalItems = totalBooks + totalOtherContent;
+    if (totalItems === 0) return 0;
+    const completedBooksCount = completedBooksInPlan(planId);
+    const completedOtherContentCount = completedOtherContentInPlan(planId);
+    const completedItems = completedBooksCount + completedOtherContentCount;
+    return Math.round((completedItems / totalItems) * 100);
 }
 </script>

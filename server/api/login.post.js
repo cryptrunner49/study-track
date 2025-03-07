@@ -1,4 +1,3 @@
-// server/api/login.post.js
 import db from '../db';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -9,27 +8,35 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 export default defineEventHandler(async (event) => {
     const { email, password } = await readBody(event);
 
-    // Fetch user from the database
-    const user = await new Promise((resolve, reject) =>
-        db.get('SELECT * FROM Users WHERE email = ?', [email], (err, row) =>
-            err ? reject(err) : resolve(row)
-        )
-    );
-
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-        throw createError({ statusCode: 401, statusMessage: 'Invalid credentials' });
+    if (!email || !password) {
+        throw createError({ statusCode: 400, statusMessage: 'Email and password are required' });
     }
 
-    // Generate JWT token with no expiration
-    const token = jwt.sign({ userId: user.userId, email: user.email }, JWT_SECRET);
+    const user = await new Promise((resolve, reject) => {
+        db.get('SELECT * FROM Users WHERE email = ?', [email], (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+        });
+    });
 
-    // Set the auth cookie with a very large maxAge (10 years)
+    if (!user) {
+        throw createError({ statusCode: 401, statusMessage: 'Invalid email or password' });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+        throw createError({ statusCode: 401, statusMessage: 'Invalid email or password' });
+    }
+
+    const token = jwt.sign({ userId: user.userId, email: user.email }, JWT_SECRET, { expiresIn: '10y' });
+
     setCookie(event, 'auth_token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 10 * 365 * 24 * 60 * 60, // 10 years in seconds
+        maxAge: 10 * 365 * 24 * 60 * 60, // 10 years
     });
 
+    console.log('User logged in:', { userId: user.userId, email });
     return { userId: user.userId, email: user.email };
 });

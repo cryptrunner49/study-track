@@ -1,4 +1,3 @@
-// server/db.js
 import sqlite3 from 'sqlite3';
 
 // Open the database with WAL mode
