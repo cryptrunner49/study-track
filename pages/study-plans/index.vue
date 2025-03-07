@@ -47,7 +47,7 @@
                         <td class="px-6 py-4 dark:text-white">{{ plan.title }}</td>
                         <td class="px-6 py-4 dark:text-white">{{ plan.description || 'No description' }}</td>
                         <td class="px-6 py-4">
-                            <NuxtLink :to="`/study-plans/${plan.planId}`" class="text-blue-500 hover:underline">View
+                            <NuxtLink :to="`/study-plans/${plan.planId}`" class="text-blue-500 hover:underline">Edit
                             </NuxtLink>
                             <button @click="deleteStudyPlan(plan.planId)"
                                 class="text-red-500 hover:underline ml-4">Delete</button>

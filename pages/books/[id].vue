@@ -47,7 +47,7 @@ definePageMeta({
 });
 
 const route = useRoute();
-const router = useRouter(); // Add router for navigation
+const router = useRouter();
 const book = ref({});
 const error = ref('');
 
@@ -73,7 +73,6 @@ async function updateBook() {
         });
         book.value = updatedBook;
         error.value = '';
-        // Redirect back to the books index page after successful update
         router.push('/books');
     } catch (err) {
         error.value = 'Failed to update book: ' + (err.data?.statusMessage || err.message);

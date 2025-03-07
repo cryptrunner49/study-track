@@ -3,37 +3,82 @@
         <h1 class="text-3xl font-bold mb-6 dark:text-white">Your Books</h1>
 
         <!-- Books List -->
-        <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden mb-8">
-            <table class="w-full table-auto">
-                <thead>
-                    <tr class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
-                        <th class="px-6 py-4 text-left">Title</th>
-                        <th class="px-6 py-4 text-left">Author</th>
-                        <th class="px-6 py-4 text-left">Progress</th>
-                        <th class="px-6 py-4 text-left">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="book in books" :key="book.bookId"
-                        class="border-b dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td class="px-6 py-4 dark:text-white">{{ book.title }}</td>
-                        <td class="px-6 py-4 dark:text-white">{{ book.author || 'Unknown' }}</td>
-                        <td class="px-6 py-4 dark:text-white">{{ book.currentPage || 0 }} / {{ book.totalPages }}</td>
-                        <td class="px-6 py-4 space-x-4">
-                            <NuxtLink :to="`/books/${book.bookId}`" class="text-blue-500 hover:underline">Edit
-                            </NuxtLink>
-                            <NuxtLink :to="`/books/reading-plan/${book.bookId}`" class="text-blue-500 hover:underline">
-                                {{ book.hasReadingPlan ? 'Edit Reading Plan' : 'Add Reading Plan' }}
-                            </NuxtLink>
-                            <button @click="deleteBook(book.bookId)"
-                                class="text-red-500 hover:underline">Delete</button>
-                        </td>
-                    </tr>
-                    <tr v-if="books.length === 0">
-                        <td colspan="4" class="px-6 py-4 text-center dark:text-white">No books found.</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="space-y-6 mb-8">
+            <div v-for="book in books" :key="book.bookId" class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+                <!-- Book Details -->
+                <div class="flex flex-col md:flex-row md:items-start md:space-x-6">
+                    <div class="flex-1">
+                        <h2 class="text-xl font-semibold dark:text-white">{{ book.title }}</h2>
+                        <p class="text-gray-600 dark:text-gray-400">
+                            {{ book.author || 'Unknown' }}
+                        </p>
+                    </div>
+                    <div class="mt-4 md:mt-0 md:w-1/3">
+                        <div class="dark:text-white">
+                            {{ book.currentPage || 0 }} / {{ book.totalPages }} pages
+                        </div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">
+                            ({{ progressPercentage(book) }}%)
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-1">
+                            <div :style="{ width: progressPercentage(book) + '%' }"
+                                class="bg-green-500 h-2.5 rounded-full"></div>
+                        </div>
+                    </div>
+                    <div class="mt-4 md:mt-0 md:w-1/4 flex flex-col space-y-2">
+                        <NuxtLink :to="`/books/${book.bookId}`" class="text-blue-500 hover:underline">
+                            Edit
+                        </NuxtLink>
+                        <NuxtLink :to="`/books/reading-plan/${book.bookId}`" class="text-blue-500 hover:underline">
+                            {{ book.readingPlan ? 'Edit Reading Plan' : 'Add Reading Plan' }}
+                        </NuxtLink>
+                        <button @click="deleteBook(book.bookId)" class="text-red-500 hover:underline text-left">
+                            Delete
+                        </button>
+                        <button v-if="book.readingPlan" @click="deleteReadingPlan(book.bookId)"
+                            class="text-red-500 hover:underline text-left">
+                            Delete Reading Plan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Integrated Reading Plan -->
+                <div v-if="book.readingPlan" class="mt-4">
+                    <button @click="togglePlan(book.bookId)"
+                        class="text-blue-500 hover:underline flex items-center focus:outline-none">
+                        <span>{{ expandedPlans[book.bookId] ? 'Hide' : 'Show' }} Reading Plan</span>
+                        <svg :class="{ 'rotate-180': expandedPlans[book.bookId] }"
+                            class="w-4 h-4 ml-2 transition-transform" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                    <div v-if="expandedPlans[book.bookId]" class="bg-gray-100 dark:bg-gray-900 p-4 rounded-lg mt-2">
+                        <h3 class="text-lg font-semibold dark:text-white mb-2">Current Reading Plan</h3>
+                        <p class="dark:text-gray-300">
+                            <strong>Session Duration:</strong> {{ book.readingPlan.hours }}h {{ book.readingPlan.minutes
+                            }}m
+                        </p>
+                        <p class="dark:text-gray-300">
+                            <strong>Reading Days:</strong>
+                            <span v-if="activeDays(book.readingPlan).length > 0">
+                                <span v-for="day in activeDays(book.readingPlan)" :key="day"
+                                    :class="{ 'font-bold text-blue-500': day.toLowerCase() === currentDay.toLowerCase() }">
+                                    {{ day }}<span
+                                        v-if="activeDays(book.readingPlan).indexOf(day) < activeDays(book.readingPlan).length - 1">,
+                                    </span>
+                                </span>
+                            </span>
+                            <span v-else>None selected</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="books.length === 0"
+                class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 text-center dark:text-white">
+                No books found.
+            </div>
         </div>
 
         <!-- Create New Book Form -->
@@ -91,15 +136,29 @@ const books = ref([]);
 const studyPlans = ref([]);
 const newBook = ref({ planId: '', title: '', author: '', totalPages: '' });
 const error = ref('');
+const days = ref(['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']);
+const expandedPlans = ref({});
+const currentDay = ref(new Date().toLocaleString('en-US', { weekday: 'long' }));
 
 onMounted(async () => {
     try {
         const fetchedBooks = await $fetch('/api/books', { credentials: 'include' });
-        // Fetch reading plan existence for each book
         books.value = await Promise.all(
             fetchedBooks.map(async (book) => {
-                const plan = await $fetch(`/api/reading-plan/${book.bookId}`, { credentials: 'include' }).catch(() => null);
-                return { ...book, hasReadingPlan: !!plan?.readingPlanId };
+                const readingPlan = await $fetch(`/api/reading-plan/${book.bookId}`, { credentials: 'include' }).catch(() => null);
+                return {
+                    ...book,
+                    readingPlan: readingPlan && readingPlan.readingPlanId ? {
+                        ...readingPlan,
+                        monday: !!readingPlan.monday,
+                        tuesday: !!readingPlan.tuesday,
+                        wednesday: !!readingPlan.wednesday,
+                        thursday: !!readingPlan.thursday,
+                        friday: !!readingPlan.friday,
+                        saturday: !!readingPlan.saturday,
+                        sunday: !!readingPlan.sunday,
+                    } : null,
+                };
             })
         );
         studyPlans.value = await $fetch('/api/study-plans', { credentials: 'include' });
@@ -113,14 +172,14 @@ async function createBook() {
         const createdBook = await $fetch('/api/books', {
             method: 'POST',
             body: {
-                planId: Number(newBook.value.planId), // Ensure number type
+                planId: Number(newBook.value.planId),
                 title: newBook.value.title,
-                author: newBook.value.author || null, // Allow null if empty
-                totalPages: Number(newBook.value.totalPages), // Ensure number type
+                author: newBook.value.author || null,
+                totalPages: Number(newBook.value.totalPages),
             },
             credentials: 'include',
         });
-        books.value.push({ ...createdBook, hasReadingPlan: false });
+        books.value.push({ ...createdBook, readingPlan: null });
         newBook.value = { planId: '', title: '', author: '', totalPages: '' };
         error.value = '';
     } catch (err) {
@@ -136,5 +195,39 @@ async function deleteBook(id) {
     } catch (err) {
         error.value = 'Failed to delete book: ' + (err.data?.statusMessage || err.message);
     }
+}
+
+async function deleteReadingPlan(bookId) {
+    try {
+        const book = books.value.find(b => b.bookId === bookId);
+        if (!book?.readingPlan?.readingPlanId) {
+            error.value = 'No reading plan found to delete';
+            return;
+        }
+        await $fetch(`/api/reading-plan/${book.readingPlan.readingPlanId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        });
+        books.value = books.value.map(b =>
+            b.bookId === bookId ? { ...b, readingPlan: null } : b
+        );
+        error.value = '';
+    } catch (err) {
+        error.value = 'Failed to delete reading plan: ' + (err.data?.statusMessage || err.message);
+    }
+}
+
+function activeDays(plan) {
+    return days.value.filter((day) => plan[day.toLowerCase()]);
+}
+
+function progressPercentage(book) {
+    const current = book.currentPage || 0;
+    const total = book.totalPages || 1;
+    return Math.min(100, Math.round((current / total) * 100));
+}
+
+function togglePlan(bookId) {
+    expandedPlans.value[bookId] = !expandedPlans.value[bookId];
 }
 </script>

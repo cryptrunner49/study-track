@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
     }
 
-    const readingPlanId = event.context.params.id;
+    const readingPlanId = event.context.params.bookId;
     const { hours, minutes, monday, tuesday, wednesday, thursday, friday, saturday, sunday } = await readBody(event);
 
     if (hours === undefined || minutes === undefined) {

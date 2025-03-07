@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
                 if (err) {
                     reject(createError({ statusCode: 500, statusMessage: 'Failed to fetch reading plan' }));
                 } else {
-                    resolve(row || {});
+                    resolve(row || null); // Return null if no plan exists
                 }
             }
         );

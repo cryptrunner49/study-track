@@ -5,7 +5,6 @@
                 {{ readingPlan.readingPlanId ? 'Edit' : 'Create' }} Reading Plan for "{{ book?.title || 'Book' }}"
             </h1>
             <form @submit.prevent="saveReadingPlan" class="space-y-6">
-                <!-- Hours and Minutes -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label for="hours" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Hours per
@@ -22,8 +21,6 @@
                             required />
                     </div>
                 </div>
-
-                <!-- Days of the Week -->
                 <div>
                     <p class="text-gray-700 dark:text-gray-300 font-medium mb-2">Reading Days</p>
                     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -34,13 +31,15 @@
                         </label>
                     </div>
                 </div>
-
-                <!-- Submit Button -->
                 <button type="submit"
                     class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-200">
                     {{ readingPlan.readingPlanId ? 'Update' : 'Create' }} Reading Plan
                 </button>
             </form>
+            <button v-if="readingPlan.readingPlanId" @click="deleteReadingPlan"
+                class="w-full mt-4 bg-red-500 hover:bg-red-700 text-white font-bold py-3 px-4 rounded transition duration-200">
+                Delete Reading Plan
+            </button>
             <p v-if="error" class="text-red-500 mt-4">{{ error }}</p>
         </div>
     </div>
@@ -68,6 +67,7 @@ const readingPlan = ref({
     friday: false,
     saturday: false,
     sunday: false,
+    readingPlanId: null,
 });
 const book = ref(null);
 const error = ref('');
@@ -78,13 +78,14 @@ onMounted(async () => {
         // Fetch book details
         book.value = await $fetch(`/api/books/${bookId}`, { credentials: 'include' });
 
-        // Fetch existing reading plan, if any
+        // Fetch existing reading plan, default to null if not found
         const existingPlan = await $fetch(`/api/reading-plan/${bookId}`, { credentials: 'include' }).catch(() => null);
         if (existingPlan && existingPlan.readingPlanId) {
             readingPlan.value = {
-                ...readingPlan.value,
                 ...existingPlan,
-                // Convert SQLite INTEGER (0/1) to boolean
+                bookId: Number(bookId),
+                hours: existingPlan.hours || 0,
+                minutes: existingPlan.minutes || 0,
                 monday: !!existingPlan.monday,
                 tuesday: !!existingPlan.tuesday,
                 wednesday: !!existingPlan.wednesday,
@@ -92,7 +93,10 @@ onMounted(async () => {
                 friday: !!existingPlan.friday,
                 saturday: !!existingPlan.saturday,
                 sunday: !!existingPlan.sunday,
+                readingPlanId: existingPlan.readingPlanId,
             };
+        } else {
+            readingPlan.value.readingPlanId = null; // Explicitly set to null if no plan exists
         }
     } catch (err) {
         error.value = 'Failed to load data: ' + (err.data?.statusMessage || err.message);
@@ -107,14 +111,57 @@ async function saveReadingPlan() {
             : '/api/reading-plan';
         const response = await $fetch(url, {
             method,
-            body: readingPlan.value,
+            body: {
+                bookId: Number(bookId), // Always include bookId for POST
+                hours: readingPlan.value.hours,
+                minutes: readingPlan.value.minutes,
+                monday: readingPlan.value.monday ? 1 : 0,
+                tuesday: readingPlan.value.tuesday ? 1 : 0,
+                wednesday: readingPlan.value.wednesday ? 1 : 0,
+                thursday: readingPlan.value.thursday ? 1 : 0,
+                friday: readingPlan.value.friday ? 1 : 0,
+                saturday: readingPlan.value.saturday ? 1 : 0,
+                sunday: readingPlan.value.sunday ? 1 : 0,
+            },
             credentials: 'include',
         });
-        readingPlan.value = response; // Update with server response (includes readingPlanId)
+        // Update readingPlan with the response, ensuring readingPlanId is set
+        readingPlan.value = { ...response, readingPlanId: response.readingPlanId };
         error.value = '';
-        router.push('/books'); // Redirect back to books list
+        router.push('/books');
     } catch (err) {
         error.value = 'Failed to save reading plan: ' + (err.data?.statusMessage || err.message);
+    }
+}
+
+async function deleteReadingPlan() {
+    try {
+        if (!readingPlan.value.readingPlanId) {
+            error.value = 'No reading plan exists to delete';
+            return;
+        }
+        await $fetch(`/api/reading-plan/${readingPlan.value.readingPlanId}`, {
+            method: 'DELETE',
+            credentials: 'include',
+        });
+        // Reset readingPlan to initial state after deletion
+        readingPlan.value = {
+            bookId: Number(bookId),
+            hours: 0,
+            minutes: 0,
+            monday: false,
+            tuesday: false,
+            wednesday: false,
+            thursday: false,
+            friday: false,
+            saturday: false,
+            sunday: false,
+            readingPlanId: null,
+        };
+        error.value = '';
+        router.push('/books');
+    } catch (err) {
+        error.value = 'Failed to delete reading plan: ' + (err.data?.statusMessage || err.message);
     }
 }
 </script>
