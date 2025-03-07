@@ -2,9 +2,21 @@
     <div class="py-8 max-w-4xl mx-auto">
         <h1 class="text-4xl font-bold mb-10 text-center dark:text-white">Your Learning Progress</h1>
 
-        <!-- Loading State -->
-        <div v-if="loading" class="text-center dark:text-white">
-            <p class="text-xl">Loading your progress...</p>
+        <!-- Skeleton Loading State -->
+        <div v-if="loading && !cachedDataLoaded" class="space-y-6">
+            <div class="bg-gray-200 dark:bg-gray-700 p-6 rounded-xl animate-pulse">
+                <div class="h-6 bg-gray-300 dark:bg-gray-600 rounded w-1/4 mb-4"></div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="h-8 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="h-8 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                    <div class="h-8 bg-gray-300 dark:bg-gray-600 rounded"></div>
+                </div>
+            </div>
+            <div v-for="n in 3" :key="n" class="bg-gray-200 dark:bg-gray-700 p-4 rounded-lg animate-pulse">
+                <div class="h-6 bg-gray-300 dark:bg-gray-600 rounded w-1/3 mb-2"></div>
+                <div class="h-4 bg-gray-300 dark:bg-gray-600 rounded w-full mb-2"></div>
+                <div class="h-2.5 bg-gray-300 dark:bg-gray-600 rounded w-1/2"></div>
+            </div>
         </div>
 
         <!-- Overview Card -->
@@ -42,7 +54,7 @@
                     <p class="text-sm text-gray-600 dark:text-gray-300">{{ plan.description || 'No description' }}</p>
                     <p class="text-sm dark:text-white">
                         Progress: {{ planProgress(plan.planId) }}% (Books: {{ completedBooksInPlan(plan.planId) }}/{{
-                            booksInPlan(planId)
+                            booksInPlan(plan.planId)
                         }})
                     </p>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
@@ -122,8 +134,17 @@ import { ref, onMounted, computed } from 'vue';
 import { useUserStore } from '~/stores/user';
 import { useRouter } from 'nuxt/app';
 
+// Debounce utility
+function debounce(fn, wait) {
+    let timeout;
+    return (...args) => {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => fn(...args), wait);
+    };
+}
+
 definePageMeta({
-    middleware: ['auth'], // Client-side auth check
+    middleware: ['auth'],
 });
 
 const userStore = useUserStore();
@@ -133,31 +154,65 @@ const books = ref([]);
 const otherContent = ref([]);
 const error = ref('');
 const loading = ref(false);
+const cachedDataLoaded = ref(false);
 const studyPlansOpen = ref(false);
 const booksOpen = ref(true);
 const otherContentOpen = ref(false);
 
-async function loadData() {
+// Use client-side state for caching
+const cachedProgress = useState('progressCache', () => ({
+    studyPlans: [],
+    books: [],
+    otherContent: [],
+    timestamp: 0,
+}));
+
+async function loadData(retryCount = 0) {
     if (!userStore.user) {
         error.value = 'User not authenticated. Redirecting to login...';
         setTimeout(() => router.push('/login'), 2000);
         return;
     }
 
+    // Use cached data if recent (e.g., within 5 minutes)
+    const cacheAge = Date.now() - cachedProgress.value.timestamp;
+    if (cacheAge < 5 * 60 * 1000 && cachedProgress.value.studyPlans.length > 0) {
+        studyPlans.value = cachedProgress.value.studyPlans;
+        books.value = cachedProgress.value.books;
+        otherContent.value = cachedProgress.value.otherContent;
+        cachedDataLoaded.value = true;
+        return;
+    }
+
     loading.value = true;
     error.value = '';
     try {
-        const [plansResponse, booksResponse, contentResponse] = await Promise.all([
-            $fetch('/api/study-plans', { credentials: 'include' }),
+        // Incremental loading with priority on study plans
+        const plansResponse = await $fetch('/api/study-plans', { credentials: 'include' });
+        studyPlans.value = plansResponse || [];
+        cachedProgress.value.studyPlans = studyPlans.value;
+
+        const [booksResponse, contentResponse] = await Promise.all([
             $fetch('/api/books', { credentials: 'include' }),
             $fetch('/api/other-content', { credentials: 'include' }),
         ]);
-        studyPlans.value = plansResponse || [];
         books.value = booksResponse || [];
         otherContent.value = contentResponse || [];
+
+        // Update cache
+        cachedProgress.value.books = books.value;
+        cachedProgress.value.otherContent = otherContent.value;
+        cachedProgress.value.timestamp = Date.now();
+        cachedDataLoaded.value = true;
     } catch (err) {
-        error.value = 'Failed to load progress data: ' + (err.data?.statusMessage || err.message);
-        console.error('Fetch error:', err);
+        if (retryCount < 3) {
+            const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff: 1s, 2s, 4s
+            error.value = `Failed to load data (attempt ${retryCount + 1}/3). Retrying in ${delay / 1000}s...`;
+            setTimeout(() => loadData(retryCount + 1), delay);
+        } else {
+            error.value = 'Failed to load progress data after 3 attempts: ' + (err.data?.statusMessage || err.message);
+            console.error('Fetch error:', err);
+        }
     } finally {
         loading.value = false;
     }
@@ -165,8 +220,13 @@ async function loadData() {
 
 onMounted(() => loadData());
 
-function retryLoad() {
-    loadData();
+// Debounced retry function
+const retryLoad = debounce(() => loadData(), 500);
+
+function toggleSection(section) {
+    if (section === 'studyPlans') studyPlansOpen.value = !studyPlansOpen.value;
+    if (section === 'books') booksOpen.value = !booksOpen.value;
+    if (section === 'otherContent') otherContentOpen.value = !otherContentOpen.value;
 }
 
 // Computed properties for progress metrics
@@ -184,12 +244,6 @@ const completedPlans = computed(() =>
 // Helper functions
 function bookProgress(currentPage, totalPages) {
     return totalPages ? Math.round(((currentPage || 0) / totalPages) * 100) : 0;
-}
-
-function toggleSection(section) {
-    if (section === 'studyPlans') studyPlansOpen.value = !studyPlansOpen.value;
-    if (section === 'books') booksOpen.value = !booksOpen.value;
-    if (section === 'otherContent') otherContentOpen.value = !otherContentOpen.value;
 }
 
 function booksInPlan(planId) {
