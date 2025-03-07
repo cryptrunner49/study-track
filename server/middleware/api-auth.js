@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export default defineEventHandler((event) => {
-    const publicRoutes = ['/api/login', '/api/logout', '/api/register'];
+    const publicRoutes = ['/', '/login', '/api/login', '/api/logout', '/api/register'];
     if (publicRoutes.some((route) => event.node.req.url.startsWith(route))) {
         return; // Skip auth for public API routes
     }
