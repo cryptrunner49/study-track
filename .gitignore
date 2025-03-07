@@ -25,3 +25,5 @@ logs
 .vscode/
 *.db-shm
 *.db-wal
+*.db
+*.db.bkp
