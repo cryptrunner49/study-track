@@ -127,11 +127,16 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useUserStore } from '~/stores/user';
+import { getBooks, createBook as createBookAPI, deleteBook as deleteBookAPI } from '~/client/api/books';
+import { getStudyPlans } from '~/client/api/study-plans';
+import { getReadingPlan, deleteReadingPlan as deleteReadingPlanAPI } from '~/client/api/reading-plan';
 
 definePageMeta({
     middleware: ['auth'],
 });
 
+const userStore = useUserStore();
 const books = ref([]);
 const studyPlans = ref([]);
 const newBook = ref({ planId: '', title: '', author: '', totalPages: '' });
@@ -141,79 +146,76 @@ const expandedPlans = ref({});
 const currentDay = ref(new Date().toLocaleString('en-US', { weekday: 'long' }));
 
 onMounted(async () => {
+    if (!userStore.user) {
+        error.value = 'User not authenticated';
+        return;
+    }
     try {
-        const fetchedBooks = await $fetch('/api/books', { credentials: 'include' });
+        const fetchedBooks = await getBooks(userStore.user);
         books.value = await Promise.all(
             fetchedBooks.map(async (book) => {
-                const readingPlan = await $fetch(`/api/reading-plan/${book.bookId}`, { credentials: 'include' }).catch(() => null);
-                return {
-                    ...book,
-                    readingPlan: readingPlan && readingPlan.readingPlanId ? {
-                        ...readingPlan,
-                        monday: !!readingPlan.monday,
-                        tuesday: !!readingPlan.tuesday,
-                        wednesday: !!readingPlan.wednesday,
-                        thursday: !!readingPlan.thursday,
-                        friday: !!readingPlan.friday,
-                        saturday: !!readingPlan.saturday,
-                        sunday: !!readingPlan.sunday,
-                    } : null,
-                };
+                const readingPlan = await getReadingPlan(book.bookId, userStore.user);
+                return { ...book, readingPlan };
             })
         );
-        studyPlans.value = await $fetch('/api/study-plans', { credentials: 'include' });
+        studyPlans.value = await getStudyPlans(userStore.user);
     } catch (err) {
-        error.value = 'Failed to load data: ' + (err.data?.statusMessage || err.message);
+        error.value = `Failed to load data: ${err.message}`;
     }
 });
 
 async function createBook() {
+    if (!userStore.user) {
+        error.value = 'User not authenticated';
+        return;
+    }
     try {
-        const createdBook = await $fetch('/api/books', {
-            method: 'POST',
-            body: {
-                planId: Number(newBook.value.planId),
-                title: newBook.value.title,
-                author: newBook.value.author || null,
-                totalPages: Number(newBook.value.totalPages),
-            },
-            credentials: 'include',
+        const createdBook = await createBookAPI(userStore.user, {
+            planId: Number(newBook.value.planId),
+            title: newBook.value.title,
+            author: newBook.value.author || null,
+            totalPages: Number(newBook.value.totalPages),
         });
         books.value.push({ ...createdBook, readingPlan: null });
         newBook.value = { planId: '', title: '', author: '', totalPages: '' };
         error.value = '';
     } catch (err) {
-        error.value = err.data?.statusMessage || 'Failed to create book: ' + err.message;
+        error.value = `Failed to create book: ${err.message}`;
     }
 }
 
 async function deleteBook(id) {
+    if (!userStore.user) {
+        error.value = 'User not authenticated';
+        return;
+    }
     try {
-        await $fetch(`/api/books/${id}`, { method: 'DELETE', credentials: 'include' });
+        await deleteBookAPI(id, userStore.user);
         books.value = books.value.filter((book) => book.bookId !== id);
         error.value = '';
     } catch (err) {
-        error.value = 'Failed to delete book: ' + (err.data?.statusMessage || err.message);
+        error.value = `Failed to delete book: ${err.message}`;
     }
 }
 
 async function deleteReadingPlan(bookId) {
+    if (!userStore.user) {
+        error.value = 'User not authenticated';
+        return;
+    }
     try {
         const book = books.value.find(b => b.bookId === bookId);
         if (!book?.readingPlan?.readingPlanId) {
             error.value = 'No reading plan found to delete';
             return;
         }
-        await $fetch(`/api/reading-plan/${book.readingPlan.readingPlanId}`, {
-            method: 'DELETE',
-            credentials: 'include',
-        });
+        await deleteReadingPlanAPI(book.readingPlan.readingPlanId, userStore.user);
         books.value = books.value.map(b =>
             b.bookId === bookId ? { ...b, readingPlan: null } : b
         );
         error.value = '';
     } catch (err) {
-        error.value = 'Failed to delete reading plan: ' + (err.data?.statusMessage || err.message);
+        error.value = `Failed to delete reading plan: ${err.message}`;
     }
 }
 

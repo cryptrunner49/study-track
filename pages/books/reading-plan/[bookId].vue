@@ -48,6 +48,9 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'nuxt/app';
+import { useUserStore } from '~/stores/user';
+import { getBook } from '~/client/api/books';
+import { getReadingPlan, createReadingPlan, updateReadingPlan, deleteReadingPlan as deleteReadingPlanAPI } from '~/client/api/reading-plan';
 
 definePageMeta({
     middleware: ['auth'],
@@ -55,6 +58,7 @@ definePageMeta({
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 const bookId = route.params.bookId;
 const readingPlan = ref({
     bookId: Number(bookId),
@@ -74,77 +78,65 @@ const error = ref('');
 const days = ref(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']);
 
 onMounted(async () => {
+    if (!userStore.user) {
+        error.value = 'User not authenticated';
+        router.push('/login');
+        return;
+    }
     try {
-        // Fetch book details
-        book.value = await $fetch(`/api/books/${bookId}`, { credentials: 'include' });
-
-        // Fetch existing reading plan, default to null if not found
-        const existingPlan = await $fetch(`/api/reading-plan/${bookId}`, { credentials: 'include' }).catch(() => null);
+        book.value = await getBook(bookId, userStore.user);
+        const existingPlan = await getReadingPlan(bookId, userStore.user);
         if (existingPlan && existingPlan.readingPlanId) {
-            readingPlan.value = {
-                ...existingPlan,
-                bookId: Number(bookId),
-                hours: existingPlan.hours || 0,
-                minutes: existingPlan.minutes || 0,
-                monday: !!existingPlan.monday,
-                tuesday: !!existingPlan.tuesday,
-                wednesday: !!existingPlan.wednesday,
-                thursday: !!existingPlan.thursday,
-                friday: !!existingPlan.friday,
-                saturday: !!existingPlan.saturday,
-                sunday: !!existingPlan.sunday,
-                readingPlanId: existingPlan.readingPlanId,
-            };
-        } else {
-            readingPlan.value.readingPlanId = null; // Explicitly set to null if no plan exists
+            readingPlan.value = { ...existingPlan, bookId: Number(bookId) };
         }
     } catch (err) {
-        error.value = 'Failed to load data: ' + (err.data?.statusMessage || err.message);
+        error.value = `Failed to load data: ${err.message}`;
     }
 });
 
 async function saveReadingPlan() {
+    if (!userStore.user) {
+        error.value = 'User not authenticated';
+        return;
+    }
     try {
-        const method = readingPlan.value.readingPlanId ? 'PUT' : 'POST';
-        const url = readingPlan.value.readingPlanId
-            ? `/api/reading-plan/${readingPlan.value.readingPlanId}`
-            : '/api/reading-plan';
-        const response = await $fetch(url, {
-            method,
-            body: {
-                bookId: Number(bookId), // Always include bookId for POST
-                hours: readingPlan.value.hours,
-                minutes: readingPlan.value.minutes,
-                monday: readingPlan.value.monday ? 1 : 0,
-                tuesday: readingPlan.value.tuesday ? 1 : 0,
-                wednesday: readingPlan.value.wednesday ? 1 : 0,
-                thursday: readingPlan.value.thursday ? 1 : 0,
-                friday: readingPlan.value.friday ? 1 : 0,
-                saturday: readingPlan.value.saturday ? 1 : 0,
-                sunday: readingPlan.value.sunday ? 1 : 0,
-            },
-            credentials: 'include',
-        });
-        // Update readingPlan with the response, ensuring readingPlanId is set
-        readingPlan.value = { ...response, readingPlanId: response.readingPlanId };
+        const payload = {
+            bookId: Number(bookId),
+            hours: readingPlan.value.hours,
+            minutes: readingPlan.value.minutes,
+            monday: readingPlan.value.monday ? 1 : 0,
+            tuesday: readingPlan.value.tuesday ? 1 : 0,
+            wednesday: readingPlan.value.wednesday ? 1 : 0,
+            thursday: readingPlan.value.thursday ? 1 : 0,
+            friday: readingPlan.value.friday ? 1 : 0,
+            saturday: readingPlan.value.saturday ? 1 : 0,
+            sunday: readingPlan.value.sunday ? 1 : 0,
+        };
+        let response;
+        if (readingPlan.value.readingPlanId) {
+            response = await updateReadingPlan(readingPlan.value.readingPlanId, userStore.user, payload);
+        } else {
+            response = await createReadingPlan(userStore.user, payload);
+        }
+        readingPlan.value = response;
         error.value = '';
         router.push('/books');
     } catch (err) {
-        error.value = 'Failed to save reading plan: ' + (err.data?.statusMessage || err.message);
+        error.value = `Failed to save reading plan: ${err.message}`;
     }
 }
 
 async function deleteReadingPlan() {
+    if (!userStore.user) {
+        error.value = 'User not authenticated';
+        return;
+    }
+    if (!readingPlan.value.readingPlanId) {
+        error.value = 'No reading plan exists to delete';
+        return;
+    }
     try {
-        if (!readingPlan.value.readingPlanId) {
-            error.value = 'No reading plan exists to delete';
-            return;
-        }
-        await $fetch(`/api/reading-plan/${readingPlan.value.readingPlanId}`, {
-            method: 'DELETE',
-            credentials: 'include',
-        });
-        // Reset readingPlan to initial state after deletion
+        await deleteReadingPlanAPI(readingPlan.value.readingPlanId, userStore.user);
         readingPlan.value = {
             bookId: Number(bookId),
             hours: 0,
@@ -161,7 +153,7 @@ async function deleteReadingPlan() {
         error.value = '';
         router.push('/books');
     } catch (err) {
-        error.value = 'Failed to delete reading plan: ' + (err.data?.statusMessage || err.message);
+        error.value = `Failed to delete reading plan: ${err.message}`;
     }
 }
 </script>

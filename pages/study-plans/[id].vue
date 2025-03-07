@@ -1,7 +1,7 @@
 <template>
     <div class="py-8 max-w-6xl mx-auto">
         <div class="flex justify-end mb-4">
-            <button @click="logout" class="text-red-500 hover:underline">Logout</button>
+            <button @click="logoutUser" class="text-red-500 hover:underline">Logout</button>
         </div>
         <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
             <div v-if="loading" class="space-y-6">
@@ -14,7 +14,7 @@
             </div>
             <div v-else>
                 <h1 class="text-3xl font-bold mb-6 dark:text-white">{{ studyPlan.title }}</h1>
-                <form @submit.prevent="updateStudyPlan" class="space-y-6 mb-8">
+                <form @submit.prevent="updateExistingStudyPlan" class="space-y-6 mb-8">
                     <div>
                         <label for="title" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Title</label>
                         <input id="title" v-model="studyPlan.title" type="text"
@@ -72,6 +72,12 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'nuxt/app';
+import { useUserStore } from '~/stores/user';
+import { getStudyPlan, updateStudyPlan } from '~/client/api/study-plans';
+import { getBooks } from '~/client/api/books';
+import { getOtherContents } from '~/client/api/other-content';
+import { getNotes } from '~/client/api/notes';
+import { logout } from '~/client/api/auth';
 
 definePageMeta({
     middleware: ['auth'],
@@ -79,6 +85,7 @@ definePageMeta({
 
 const route = useRoute();
 const router = useRouter();
+const userStore = useUserStore();
 const studyPlan = ref({ title: '', description: '' });
 const books = ref([]);
 const otherContent = ref([]);
@@ -93,11 +100,13 @@ async function loadData() {
     error.value = '';
     isUnauthorized.value = false;
     try {
+        const user = userStore.user;
+        if (!user) throw new Error('User not authenticated');
         const [planResponse, booksResponse, contentResponse, notesResponse] = await Promise.all([
-            $fetch(`/api/study-plans/${planId}`, { credentials: 'include' }),
-            $fetch(`/api/books?planId=${planId}`, { credentials: 'include' }),
-            $fetch(`/api/other-content?planId=${planId}`, { credentials: 'include' }),
-            $fetch(`/api/notes?planId=${planId}`, { credentials: 'include' }),
+            getStudyPlan(planId, user),
+            getBooks(user, planId),
+            getOtherContents(user, planId),
+            getNotes(user, { planId }),
         ]);
 
         studyPlan.value = planResponse || { title: '', description: '' };
@@ -105,18 +114,15 @@ async function loadData() {
         otherContent.value = contentResponse || [];
         notes.value = notesResponse || [];
     } catch (err) {
-        error.value = 'Failed to load study plan details: ' + (err.data?.statusMessage || err.message);
-        isUnauthorized.value = err.status === 401;
-        console.error('Load error:', err);
-        if (err.status === 404) {
-            studyPlan.value = { title: '', description: '' }; // Reset on not found
-        }
+        error.value = err.message || 'Failed to load study plan details';
+        isUnauthorized.value = err.statusCode === 401;
+        if (err.statusCode === 404) studyPlan.value = { title: '', description: '' };
     } finally {
         loading.value = false;
     }
 }
 
-async function updateStudyPlan() {
+async function updateExistingStudyPlan() {
     const planId = route.params.id;
     if (!studyPlan.value.title.trim()) {
         error.value = 'Title cannot be empty';
@@ -124,29 +130,28 @@ async function updateStudyPlan() {
     }
 
     try {
-        const updatedPlan = await $fetch(`/api/study-plans/${planId}`, {
-            method: 'PUT',
-            body: { title: studyPlan.value.title, description: studyPlan.value.description || '' },
-            credentials: 'include',
+        const user = userStore.user;
+        if (!user) throw new Error('User not authenticated');
+        const updatedPlan = await updateStudyPlan(planId, user, {
+            title: studyPlan.value.title,
+            description: studyPlan.value.description || '',
         });
         studyPlan.value = updatedPlan;
         error.value = '';
         isUnauthorized.value = false;
-        console.log('Study plan updated successfully:', updatedPlan);
     } catch (err) {
-        error.value = 'Failed to update study plan: ' + (err.data?.statusMessage || err.message);
-        isUnauthorized.value = err.status === 401;
-        console.error('Update error:', err);
+        error.value = err.message || 'Failed to update study plan';
+        isUnauthorized.value = err.statusCode === 401;
     }
 }
 
-async function logout() {
+async function logoutUser() {
     try {
-        await $fetch('/api/logout', { method: 'POST', credentials: 'include' });
+        await logout();
+        userStore.clearUser();
         router.push('/login');
     } catch (err) {
-        console.error('Logout error:', err);
-        error.value = 'Failed to logout: ' + (err.data?.statusMessage || err.message);
+        error.value = err.message || 'Failed to logout';
     }
 }
 
