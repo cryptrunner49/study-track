@@ -226,7 +226,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue';
+import { ref, onMounted, computed, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useUserStore } from '~/stores/user';
 import { Editor, EditorContent, BubbleMenu } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
@@ -235,7 +235,8 @@ import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
-import Highlight from '@tiptap/extension-highlight'; // Added Highlight extension
+import Highlight from '@tiptap/extension-highlight';
+import hljs from 'highlight.js'; // Import Highlight.js directly
 import { createLowlight } from 'lowlight';
 
 // Import Highlight.js languages
@@ -388,11 +389,26 @@ onMounted(async () => {
         books.value = booksData;
         otherContent.value = contentData;
         console.log('Data fetched:', { notesData, plansData, booksData, contentData });
+        // Highlight code blocks after data is loaded
+        highlightCodeBlocks();
     } catch (err) {
         console.error('Fetch error:', err);
         error.value = 'Failed to load data: ' + (err.data?.statusMessage || err.message);
     }
 });
+
+// Watch filteredNotes to reapply highlighting when it changes
+watch(filteredNotes, () => {
+    nextTick(() => highlightCodeBlocks());
+});
+
+function highlightCodeBlocks() {
+    nextTick(() => {
+        document.querySelectorAll('.note-content pre code').forEach((block) => {
+            hljs.highlightElement(block);
+        });
+    });
+}
 
 async function createNote() {
     if (!newNote.value.type || !newNote.value.id || !newNote.value.content) {
@@ -589,6 +605,12 @@ function applyFilters() {
 
 .note-content pre {
     @apply bg-gray-100 dark:bg-gray-700 rounded p-2 my-1 font-mono text-xs overflow-auto;
+}
+
+/* Ensure Highlight.js styles are applied */
+.note-content pre code.hljs {
+    @apply bg-transparent p-0;
+    /* Reset padding and background to let Highlight.js styles take over */
 }
 
 .note-content ul,
