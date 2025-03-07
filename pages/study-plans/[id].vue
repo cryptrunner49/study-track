@@ -43,7 +43,7 @@
                 <ul class="mb-6 list-disc list-inside dark:text-white">
                     <li v-for="book in books" :key="book.bookId" class="mb-2">
                         {{ book.title }} by {{ book.author || 'Unknown' }} ({{ book.currentPage || 0 }} / {{
-                        book.totalPages }} pages)
+                            book.totalPages }} pages)
                     </li>
                     <li v-if="books.length === 0" class="text-gray-500 dark:text-gray-400">No books assigned.</li>
                 </ul>
