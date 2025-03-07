@@ -84,8 +84,8 @@
                     <h3 class="text-lg font-medium dark:text-white">{{ book.title }}</h3>
                     <p class="text-sm text-gray-600 dark:text-gray-300">Author: {{ book.author || 'Unknown' }}</p>
                     <p class="text-sm dark:text-white">
-                        Pages: {{ book.currentPage || 0 }} / {{ book.totalPages }} ({{
-                            bookProgress(book.currentPage, book.totalPages)
+                        Pages: {{ book.currentPage || 0 }} / {{ book.totalPages }} ({{ bookProgress(book.currentPage,
+                            book.totalPages)
                         }}%)
                     </p>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
@@ -187,19 +187,17 @@ async function loadData(retryCount = 0) {
     loading.value = true;
     error.value = '';
     try {
-        // Incremental loading with priority on study plans
-        const plansResponse = await $fetch('/api/study-plans', { credentials: 'include' });
-        studyPlans.value = plansResponse || [];
-        cachedProgress.value.studyPlans = studyPlans.value;
-
-        const [booksResponse, contentResponse] = await Promise.all([
-            $fetch('/api/books', { credentials: 'include' }),
-            $fetch('/api/other-content', { credentials: 'include' }),
+        const [plansResponse, booksResponse, contentResponse] = await Promise.all([
+            $fetch('/api/study-plans', { credentials: 'include' }),
+            $fetch('/api/books', { credentials: 'include' }), // No planId to fetch all
+            $fetch('/api/other-content', { credentials: 'include' }), // No planId to fetch all
         ]);
+        studyPlans.value = plansResponse || [];
         books.value = booksResponse || [];
         otherContent.value = contentResponse || [];
 
         // Update cache
+        cachedProgress.value.studyPlans = studyPlans.value;
         cachedProgress.value.books = books.value;
         cachedProgress.value.otherContent = otherContent.value;
         cachedProgress.value.timestamp = Date.now();
@@ -222,12 +220,6 @@ onMounted(() => loadData());
 
 // Debounced retry function
 const retryLoad = debounce(() => loadData(), 500);
-
-function toggleSection(section) {
-    if (section === 'studyPlans') studyPlansOpen.value = !studyPlansOpen.value;
-    if (section === 'books') booksOpen.value = !booksOpen.value;
-    if (section === 'otherContent') otherContentOpen.value = !otherContentOpen.value;
-}
 
 // Computed properties for progress metrics
 const completedBooks = computed(() => books.value.filter((book) => (book.currentPage || 0) >= book.totalPages).length);

@@ -1,31 +1,40 @@
 import db from '../db';
-import { defineEventHandler, createError } from 'h3';
+import { defineEventHandler, getQuery, createError } from 'h3';
+import { getCurrentUser } from '~/server/utils/auth';
 
-export default defineEventHandler((event) => {
-    const user = event.context.user;
-    if (!user) {
+export default defineEventHandler(async (event) => {
+    const userId = getCurrentUser(event);
+    const { planId } = getQuery(event);
+
+    if (!userId) {
         throw createError({ statusCode: 401, statusMessage: 'Unauthorized' });
     }
+    if (!planId) {
+        throw createError({ statusCode: 400, statusMessage: 'planId is required' });
+    }
+
     return new Promise((resolve, reject) => {
         db.all(
-            `SELECT n.*
-       FROM Notes n
-       LEFT JOIN StudyPlans sp ON n.planId = sp.planId
-       LEFT JOIN Books b ON n.bookId = b.bookId
-       LEFT JOIN OtherContent oc ON n.contentId = oc.contentId
-       LEFT JOIN StudyPlans sp2 ON b.planId = sp2.planId OR oc.planId = sp2.planId
-       WHERE sp.userId = ? OR sp2.userId = ?`,
-            [user.userId, user.userId],
+            'SELECT * FROM Notes WHERE planId = ?',
+            [planId],
             (err, rows) => {
                 if (err) {
-                    console.error('SQL Error:', err.message);
-                    reject(createError({ statusCode: 500, statusMessage: 'Failed to fetch notes: ' + err.message }));
-                } else {
-                    resolve(rows || []);
+                    console.error('Notes fetch error:', { planId, message: err.message });
+                    return reject(createError({ statusCode: 500, statusMessage: `Database error: ${err.message}` }));
                 }
+                // Verify ownership
+                db.get(
+                    'SELECT userId FROM StudyPlans WHERE planId = ?',
+                    [planId],
+                    (err, plan) => {
+                        if (err || !plan || plan.userId !== userId) {
+                            return reject(createError({ statusCode: 403, statusMessage: 'Forbidden: Invalid plan ownership' }));
+                        }
+                        console.log('Notes fetched:', { planId, count: rows.length });
+                        resolve(rows || []);
+                    }
+                );
             }
         );
     });
 });
-
-export const middleware = ['api-auth'];

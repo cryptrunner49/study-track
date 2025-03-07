@@ -1,5 +1,8 @@
 <template>
     <div class="py-8 max-w-6xl mx-auto">
+        <div class="flex justify-end mb-4">
+            <button @click="logout" class="text-red-500 hover:underline">Logout</button>
+        </div>
         <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
             <div v-if="loading" class="space-y-6">
                 <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-pulse"></div>
@@ -40,7 +43,7 @@
                 <ul class="mb-6 list-disc list-inside dark:text-white">
                     <li v-for="book in books" :key="book.bookId" class="mb-2">
                         {{ book.title }} by {{ book.author || 'Unknown' }} ({{ book.currentPage || 0 }} / {{
-                            book.totalPages }} pages)
+                        book.totalPages }} pages)
                     </li>
                     <li v-if="books.length === 0" class="text-gray-500 dark:text-gray-400">No books assigned.</li>
                 </ul>
@@ -76,7 +79,7 @@ definePageMeta({
 
 const route = useRoute();
 const router = useRouter();
-const studyPlan = ref({});
+const studyPlan = ref({ title: '', description: '' });
 const books = ref([]);
 const otherContent = ref([]);
 const notes = ref([]);
@@ -96,7 +99,8 @@ async function loadData() {
             $fetch(`/api/other-content?planId=${planId}`, { credentials: 'include' }),
             $fetch(`/api/notes?planId=${planId}`, { credentials: 'include' }),
         ]);
-        studyPlan.value = planResponse || {};
+
+        studyPlan.value = planResponse || { title: '', description: '' };
         books.value = booksResponse || [];
         otherContent.value = contentResponse || [];
         notes.value = notesResponse || [];
@@ -104,21 +108,31 @@ async function loadData() {
         error.value = 'Failed to load study plan details: ' + (err.data?.statusMessage || err.message);
         isUnauthorized.value = err.status === 401;
         console.error('Load error:', err);
+        if (err.status === 404) {
+            studyPlan.value = { title: '', description: '' }; // Reset on not found
+        }
     } finally {
         loading.value = false;
     }
 }
 
 async function updateStudyPlan() {
+    const planId = route.params.id;
+    if (!studyPlan.value.title.trim()) {
+        error.value = 'Title cannot be empty';
+        return;
+    }
+
     try {
-        const updatedPlan = await $fetch(`/api/study-plans/${route.params.id}`, {
+        const updatedPlan = await $fetch(`/api/study-plans/${planId}`, {
             method: 'PUT',
-            body: studyPlan.value,
+            body: { title: studyPlan.value.title, description: studyPlan.value.description || '' },
             credentials: 'include',
         });
         studyPlan.value = updatedPlan;
         error.value = '';
         isUnauthorized.value = false;
+        console.log('Study plan updated successfully:', updatedPlan);
     } catch (err) {
         error.value = 'Failed to update study plan: ' + (err.data?.statusMessage || err.message);
         isUnauthorized.value = err.status === 401;
@@ -132,6 +146,7 @@ async function logout() {
         router.push('/login');
     } catch (err) {
         console.error('Logout error:', err);
+        error.value = 'Failed to logout: ' + (err.data?.statusMessage || err.message);
     }
 }
 
