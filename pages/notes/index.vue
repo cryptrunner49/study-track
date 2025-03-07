@@ -1,78 +1,83 @@
 <template>
-    <div class="py-4 max-w-5xl mx-auto">
-        <h1 class="text-2xl font-bold mb-6 dark:text-white">Your Notes</h1>
+    <div class="py-6 max-w-6xl mx-auto">
+        <h1 class="text-3xl font-extrabold mb-8 text-gray-900 dark:text-white tracking-tight">Your Notes</h1>
 
         <!-- Notes List Section -->
-        <div v-if="!isCreatingNote" class="space-y-4">
+        <div v-if="!isCreatingNote" class="space-y-6">
             <!-- Toolbar -->
-            <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 flex flex-col sm:flex-row gap-4">
-                <div class="flex-1">
-                    <label for="filterType" class="block text-sm text-gray-700 dark:text-gray-300 font-medium mb-1">
-                        Filter by Type
-                    </label>
-                    <select id="filterType" v-model="filter.type"
-                        class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        @change="filter.id = ''; applyFilters()">
-                        <option value="">All Types</option>
-                        <option value="plan">Study Plan</option>
-                        <option value="book">Book</option>
-                        <option value="content">Other Content</option>
-                    </select>
+            <div
+                class="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-lg rounded-xl p-6 flex flex-col sm:flex-row gap-6 items-center">
+                <div class="flex flex-1 flex-col sm:flex-row gap-6 w-full">
+                    <div class="flex-1">
+                        <label for="filterType"
+                            class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                            Filter by Type
+                        </label>
+                        <select id="filterType" v-model="filter.type"
+                            class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 transition-all"
+                            @change="filter.id = ''; applyFilters()">
+                            <option value="">All Types</option>
+                            <option value="plan">Study Plan</option>
+                            <option value="book">Book</option>
+                            <option value="content">Other Content</option>
+                        </select>
+                    </div>
+                    <div class="flex-1">
+                        <label for="filterName"
+                            class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                            Search by Name
+                        </label>
+                        <input id="filterName" v-model="filter.name" type="text" placeholder="Enter name..."
+                            class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 transition-all"
+                            @input="applyFilters" />
+                    </div>
+                    <div class="flex-1">
+                        <label for="filterId" class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+                            Filter by Item
+                        </label>
+                        <select id="filterId" v-model="filter.id"
+                            class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 transition-all"
+                            :disabled="!filter.type" @change="applyFilters">
+                            <option value="">All Items</option>
+                            <option v-if="filter.type === 'plan'" v-for="plan in studyPlans" :key="plan.planId"
+                                :value="plan.planId">
+                                {{ plan.title }}
+                            </option>
+                            <option v-if="filter.type === 'book'" v-for="book in books" :key="book.bookId"
+                                :value="book.bookId">
+                                {{ book.title }} (Plan: {{ getPlanTitle(book.planId) }})
+                            </option>
+                            <option v-if="filter.type === 'content'" v-for="content in otherContent"
+                                :key="content.contentId" :value="content.contentId">
+                                {{ content.title }} ({{ content.otherType || 'N/A' }})
+                            </option>
+                        </select>
+                    </div>
                 </div>
-                <div class="flex-1">
-                    <label for="filterName" class="block text-sm text-gray-700 dark:text-gray-300 font-medium mb-1">
-                        Search by Name
-                    </label>
-                    <input id="filterName" v-model="filter.name" type="text" placeholder="Enter name..."
-                        class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        @input="applyFilters" />
+                <div class="sm:ml-6 mt-4 sm:mt-0">
+                    <button @click="isCreatingNote = true"
+                        class="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                        Add Note
+                    </button>
                 </div>
-                <div class="flex-1">
-                    <label for="filterId" class="block text-sm text-gray-700 dark:text-gray-300 font-medium mb-1">
-                        Filter by Specific Item
-                    </label>
-                    <select id="filterId" v-model="filter.id"
-                        class="w-full px-2 py-1 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        :disabled="!filter.type" @change="applyFilters">
-                        <option value="">All Items</option>
-                        <option v-if="filter.type === 'plan'" v-for="plan in studyPlans" :key="plan.planId"
-                            :value="plan.planId">
-                            {{ plan.title }}
-                        </option>
-                        <option v-if="filter.type === 'book'" v-for="book in books" :key="book.bookId"
-                            :value="book.bookId">
-                            {{ book.title }} (Plan: {{ getPlanTitle(book.planId) }})
-                        </option>
-                        <option v-if="filter.type === 'content'" v-for="content in otherContent"
-                            :key="content.contentId" :value="content.contentId">
-                            {{ content.title }} ({{ content.otherType || 'N/A' }})
-                        </option>
-                    </select>
-                </div>
-                <button @click="isCreatingNote = true"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded transition-colors duration-200 self-end">
-                    Add Note
-                </button>
             </div>
 
-            <!-- Notes List -->
-            <div class="space-y-3">
+            <!-- Notes Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div v-for="note in filteredNotes" :key="note.noteId"
-                    class="bg-white dark:bg-gray-800 shadow-sm rounded-md p-3 transition-all duration-200 hover:shadow-md">
-                    <!-- Content (Main Focus) -->
-                    <div class="note-content mb-2 dark:text-gray-200 text-sm">
+                    class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-4 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                    <div class="note-content mb-3 dark:text-gray-200 text-sm">
                         <div v-html="note.content"></div>
                     </div>
-                    <!-- Metadata and Actions -->
                     <div
-                        class="flex flex-col sm:flex-row sm:justify-between sm:items-center border-t dark:border-gray-700 pt-2 text-xs text-gray-600 dark:text-gray-400">
+                        class="flex flex-col sm:flex-row sm:justify-between sm:items-center border-t dark:border-gray-700 pt-3 text-xs text-gray-600 dark:text-gray-400">
                         <div class="space-y-1 sm:space-y-0 sm:space-x-4">
                             <span><strong>With:</strong> {{ getAssociationDisplay(note) }}</span>
                             <span><strong>Created:</strong> {{ formatDate(note.createdDate) }}</span>
                         </div>
                         <div class="mt-2 sm:mt-0 flex space-x-3">
                             <NuxtLink :to="`/notes/${note.noteId}`"
-                                class="text-blue-500 hover:underline hover:text-blue-700 transition-colors">
+                                class="text-indigo-500 hover:underline hover:text-indigo-700 transition-colors">
                                 Edit
                             </NuxtLink>
                             <button @click="deleteNote(note.noteId)"
@@ -83,22 +88,23 @@
                     </div>
                 </div>
                 <div v-if="filteredNotes.length === 0"
-                    class="bg-white dark:bg-gray-800 shadow-sm rounded-md p-3 text-center dark:text-gray-300 text-sm">
+                    class="col-span-full bg-white dark:bg-gray-800 shadow-md rounded-xl p-4 text-center dark:text-gray-300 text-sm">
                     No notes found.
                 </div>
             </div>
         </div>
 
         <!-- Create New Note Form Section -->
-        <div v-if="isCreatingNote" class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
-            <h2 class="text-xl font-bold mb-4 dark:text-white">Add a New Note</h2>
-            <form @submit.prevent="createNote" class="space-y-4">
+        <div v-if="isCreatingNote" class="bg-white dark:bg-gray-800 shadow-lg rounded-xl p-6">
+            <h2 class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Add a New Note</h2>
+            <form @submit.prevent="createNote" class="space-y-6">
                 <div>
-                    <label for="associationType" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">
+                    <label for="associationType"
+                        class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                         Associate With
                     </label>
                     <select id="associationType" v-model="newNote.type"
-                        class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all"
                         required @change="newNote.id = ''">
                         <option value="" disabled>Select Type</option>
                         <option value="plan">Study Plan</option>
@@ -107,11 +113,12 @@
                     </select>
                 </div>
                 <div v-if="newNote.type">
-                    <label for="associationId" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">
+                    <label for="associationId"
+                        class="block text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
                         {{ associationLabel }}
                     </label>
                     <select id="associationId" v-model="newNote.id"
-                        class="w-full px-3 py-2 border rounded dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 transition-all"
                         required>
                         <option value="" disabled>Select an Item</option>
                         <option v-if="newNote.type === 'plan'" v-for="plan in studyPlans" :key="plan.planId"
@@ -130,37 +137,35 @@
                 </div>
                 <div>
                     <div class="flex items-center space-x-4 mb-2">
-                        <label for="content" class="text-gray-700 dark:text-gray-300 font-medium">
-                            Note Editor
-                        </label>
+                        <label for="content" class="text-gray-700 dark:text-gray-200 font-semibold">Note Editor</label>
                         <div class="flex space-x-2">
                             <button type="button" @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
                                 :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('heading', { level: 1 }) }"
-                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200">
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 transition-colors">
                                 H1
                             </button>
                             <button type="button" @click="editor.chain().focus().toggleBold().run()"
                                 :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('bold') }"
-                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200">
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 transition-colors">
                                 <strong>B</strong>
                             </button>
                             <button type="button" @click="editor.chain().focus().toggleItalic().run()"
                                 :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('italic') }"
-                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200">
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 transition-colors">
                                 <em>I</em>
                             </button>
                             <button type="button" @click="editor.chain().focus().toggleCodeBlock().run()"
                                 :class="{ 'bg-gray-200 dark:bg-gray-600': editor.isActive('codeBlock') }"
-                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200">
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 transition-colors">
                                 <code>Code</code>
                             </button>
                             <button type="button" @click="addImage"
-                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200">
+                                class="px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200 transition-colors">
                                 <span>🖼️</span>
                             </button>
                         </div>
                     </div>
-                    <div class="relative w-full border rounded dark:border-gray-600">
+                    <div class="relative w-full border border-gray-300 dark:border-gray-600 rounded-lg">
                         <BubbleMenu :editor="editor" :tippy-options="{ duration: 100 }"
                             class="bg-white dark:bg-gray-700 border dark:border-gray-600 rounded shadow-md p-1 flex space-x-1">
                             <button @click="editor.chain().focus().toggleBold().run()"
@@ -198,11 +203,11 @@
                 </div>
                 <div class="flex space-x-4">
                     <button type="submit"
-                        class="flex-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200">
+                        class="flex-1 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
                         Create Note
                     </button>
                     <button type="button" @click="cancelNoteCreation"
-                        class="flex-1 bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded transition-colors duration-200">
+                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
                         Cancel
                     </button>
                 </div>
@@ -458,7 +463,6 @@ function formatDate(dateStr) {
 function applyFilters() {
     let result = [...notes.value];
 
-    // Filter by type
     if (filter.value.type) {
         result = result.filter((note) => {
             if (filter.value.type === 'plan') return !!note.planId;
@@ -468,7 +472,6 @@ function applyFilters() {
         });
     }
 
-    // Filter by specific ID
     if (filter.value.id) {
         result = result.filter((note) => {
             if (filter.value.type === 'plan') return note.planId === Number(filter.value.id);
@@ -478,7 +481,6 @@ function applyFilters() {
         });
     }
 
-    // Filter by name (case-insensitive)
     if (filter.value.name) {
         const searchTerm = filter.value.name.toLowerCase();
         result = result.filter((note) => {
@@ -494,7 +496,7 @@ function applyFilters() {
 <style>
 /* Editor Styles */
 .tiptap {
-    @apply w-full min-h-[100px] p-2 dark:bg-gray-800 dark:text-gray-200 focus:outline-none rounded-b;
+    @apply w-full min-h-[100px] p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 rounded-b-lg focus:outline-none border-t border-gray-300 dark:border-gray-600;
 }
 
 .tiptap p {
@@ -548,7 +550,7 @@ function applyFilters() {
 
 /* Note Content Styles */
 .note-content {
-    @apply w-1/2;
+    @apply w-full;
 }
 
 .note-content p {
