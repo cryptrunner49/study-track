@@ -35,21 +35,20 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  <div v-if="showDropdown"
-                    class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1">
-                    <NuxtLink to="/profile" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700">
-                      Profile
-                    </NuxtLink>
-                    <button @click="logout"
-                      class="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                  <div v-if="showDropdown" class="absolute right-0 mt-3 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 
+         transform translate-y-1 scale-95 origin-top-right transition-all duration-150 ease-out 
+         border border-gray-200 dark:border-gray-700 z-50">
+                    <button @click="logout" class="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 
+           transition-colors duration-200">
                       Logout
                     </button>
                   </div>
                 </div>
               </template>
               <template v-else>
-                <NuxtLink to="/login"
-                  class="px-4 py-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 font-medium">
+                <NuxtLink to="/login" class="px-4 py-2 rounded-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 
+         hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-500 dark:hover:text-blue-400 
+         font-medium transition-colors duration-200">
                   Login
                 </NuxtLink>
                 <NuxtLink to="/register"
@@ -150,7 +149,7 @@ function handleOutsideClick(event) {
 async function logout() {
   try {
     await $fetch('/api/logout', { method: 'POST', credentials: 'include' });
-    userStore.logout();
+    userStore.clearUser();
     router.push('/login');
     mobileMenuOpen.value = false;
     showDropdown.value = false;
