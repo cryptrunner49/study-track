@@ -28,7 +28,6 @@ Visit `http://localhost:3000` in your browser and start learning! 🎉
 ### Prerequisites
 
 - **Node.js** & **npm**
-- **SQLite3**
 
 ### Installation
 
@@ -58,7 +57,7 @@ Visit `http://localhost:3000` in your browser and start learning! 🎉
 ## 🛠️ Tech Stack
 
 - **Fullstack**: Nuxt.js for a snappy, modern UI 🌐
-- **Database**: SQLite3 for lightweight, efficient storage 💾
+- **Database**: Dexie.js (IndexedDB) 💾
 
 ---
 
