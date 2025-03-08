@@ -6,7 +6,7 @@
         <div class="flex items-center justify-between">
           <!-- Logo/Brand -->
           <NuxtLink to="/" class="text-xl font-bold hover:text-blue-500 transition-colors duration-200">
-            StudyHub
+            StudyTrack
           </NuxtLink>
 
           <!-- Desktop Navigation -->
