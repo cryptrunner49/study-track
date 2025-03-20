@@ -5,12 +5,14 @@ export default defineNuxtConfig({
   modules: ['@pinia/nuxt', '@nuxtjs/tailwindcss'],
   css: ['@mdi/font/css/materialdesignicons.css', '~/assets/css/tailwind.css'],
   app: {
+    baseURL: '/study-track/',
+    buildAssetsDir: 'assets',
     head: {
       link: [
         // SVG favicon
         { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
       ],
-    },
+    }
   },
   vite: {
     server: {
@@ -20,4 +22,5 @@ export default defineNuxtConfig({
     },
   },
   ssr: false,
+
 });
