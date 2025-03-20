@@ -56,7 +56,7 @@
                 </div>
                 <div class="sm:ml-6 mt-4 sm:mt-0">
                     <button @click="isCreatingNote = true"
-                        class="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-200 transform hover:scale-105">
+                        class="bg-gradient-to-r from-indigo-500 to-blue-600 hover:from-indigo-600 hover:to-blue-700 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all duration-200 transform hover:-translate-y-1">
                         Add Note
                     </button>
                 </div>
@@ -278,6 +278,7 @@ import awk from 'highlight.js/lib/languages/awk';
 import angelscript from 'highlight.js/lib/languages/angelscript';
 
 import 'highlight.js/styles/github-dark.css';
+import { definePageMeta } from '#imports';
 
 const lowlight = createLowlight();
 lowlight.register('c', c);

@@ -141,6 +141,10 @@ import Image from '@tiptap/extension-image';
 import Highlight from '@tiptap/extension-highlight';
 import { createLowlight } from 'lowlight';
 import hljs from 'highlight.js';
+import { getNote, updateNote as updateNoteAPI } from '~/client/api/notes';
+import { getStudyPlans } from '~/client/api/study-plans';
+import { getBooks } from '~/client/api/books';
+import { getOtherContents } from '~/client/api/other-content';
 
 // Import Highlight.js languages
 import c from 'highlight.js/lib/languages/c';
@@ -177,10 +181,7 @@ import awk from 'highlight.js/lib/languages/awk';
 import angelscript from 'highlight.js/lib/languages/angelscript';
 
 import 'highlight.js/styles/github-dark.css';
-import { getNote, updateNote as updateNoteAPI } from '~/client/api/notes';
-import { getStudyPlans } from '~/client/api/study-plans';
-import { getBooks } from '~/client/api/books';
-import { getOtherContents } from '~/client/api/other-content';
+import { definePageMeta } from '#imports';
 
 const lowlight = createLowlight();
 lowlight.register('c', c);

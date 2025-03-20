@@ -4,21 +4,17 @@
         <div v-if="!userStore.user" class="flex flex-col items-center justify-center min-h-screen px-4 text-center">
             <h1
                 class="text-5xl md:text-6xl font-extrabold mb-6 bg-gradient-to-r from-blue-600 to-green-500 bg-clip-text text-transparent leading-tight">
-                Welcome to StudyTrack
-            </h1>
-            <p class="text-xl md:text-2xl mb-10 max-w-2xl text-gray-600 dark:text-gray-300 leading-relaxed">
-                Your ultimate companion for organizing reading and study goals. Track progress, manage content, and
-                achieve your learning objectives.
-            </p>
+                Welcome to StudyTrack</h1>
+            <p class="text-xl md:text-2xl mb-10 max-w-2xl text-gray-600 dark:text-gray-300 leading-relaxed">Your
+                ultimate companion for organizing reading and study goals. Track progress, manage content, and achieve
+                your learning objectives.</p>
             <div class="flex flex-col sm:flex-row gap-4">
                 <NuxtLink to="/login"
                     class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:-translate-y-1">
-                    Login
-                </NuxtLink>
+                    Login</NuxtLink>
                 <NuxtLink to="/register"
                     class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition-all duration-300 transform hover:-translate-y-1">
-                    Register
-                </NuxtLink>
+                    Register</NuxtLink>
             </div>
         </div>
 
@@ -48,9 +44,7 @@
             <div v-else-if="error" class="p-6 bg-red-50 dark:bg-red-900/50 rounded-xl shadow-md text-center">
                 <p class="text-red-700 dark:text-red-300 font-medium mb-4">{{ error }}</p>
                 <button @click="loadDashboardData"
-                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200">
-                    Retry
-                </button>
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200">Retry</button>
             </div>
 
             <!-- Dashboard Content -->
@@ -132,28 +126,22 @@ async function loadDashboardData() {
 
     try {
         const user = userStore.user;
-        console.log('User:', user); // Debug: Check if user is populated
         const [plansResponse, booksResponse, contentResponse] = await Promise.all([
             getStudyPlans(user),
             getBooks(user),
             getOtherContents(user),
         ]);
-        console.log('API Responses:', plansResponse, booksResponse, contentResponse); // Debug: Check API data
         studyPlans.value = plansResponse || [];
         books.value = booksResponse || [];
         otherContent.value = contentResponse || [];
     } catch (err) {
         error.value = err.message || 'Failed to load dashboard data';
-        console.error('Error loading data:', err); // Debug: Log the error
     } finally {
         loading.value = false;
     }
 }
 
-onMounted(() => {
-    console.log('Mounted, user:', userStore.user); // Debug: Check user on mount
-    loadDashboardData();
-});
+onMounted(() => loadDashboardData());
 </script>
 
 <style scoped>

@@ -1,6 +1,13 @@
 import db from '../db';
 import { AppError } from '../utils/errors';
 
+/**
+ * Deletes a book by its ID.
+ * @param {number} bookId - The ID of the book to delete.
+ * @param {Object} user - The user object.
+ * @returns {Promise<Object>} - A success message.
+ * @throws {AppError} - If the user is not authenticated or the book does not exist.
+ */
 export async function deleteBook(bookId, user) {
     if (!user) throw new AppError(401, 'Unauthorized');
 
@@ -22,6 +29,13 @@ export async function deleteBook(bookId, user) {
     return { message: 'Book deleted successfully' };
 }
 
+/**
+ * Retrieves a book by its ID.
+ * @param {number} bookId - The ID of the book to retrieve.
+ * @param {Object} user - The user object.
+ * @returns {Promise<Object>} - The book object.
+ * @throws {AppError} - If the user is not authenticated or the book does not exist.
+ */
 export async function getBook(bookId, user) {
     if (!user) throw new AppError(401, 'Unauthorized');
 
@@ -36,6 +50,14 @@ export async function getBook(bookId, user) {
     return book;
 }
 
+/**
+ * Updates a book's details.
+ * @param {number} bookId - The ID of the book to update.
+ * @param {Object} user - The user object.
+ * @param {Object} updates - The updates to apply to the book.
+ * @returns {Promise<Object>} - The updated book object.
+ * @throws {AppError} - If the user is not authenticated or any required fields are missing.
+ */
 export async function updateBook(bookId, user, { title, author, totalPages, currentPage }) {
     if (!user) throw new AppError(401, 'Unauthorized');
     if (!title || totalPages === undefined || currentPage === undefined) {
@@ -59,6 +81,13 @@ export async function updateBook(bookId, user, { title, author, totalPages, curr
     return { bookId, planId: book.planId, title, author, totalPages, currentPage };
 }
 
+/**
+ * Retrieves all books for a user, optionally filtered by a study plan.
+ * @param {Object} user - The user object.
+ * @param {number} [planId] - The ID of the study plan to filter by.
+ * @returns {Promise<Array>} - An array of book objects.
+ * @throws {AppError} - If the user is not authenticated.
+ */
 export async function getBooks(user, planId) {
     if (!user) throw new AppError(401, 'Unauthorized');
 
@@ -77,6 +106,13 @@ export async function getBooks(user, planId) {
     return books || [];
 }
 
+/**
+ * Creates a new book.
+ * @param {Object} user - The user object.
+ * @param {Object} bookData - The data for the new book.
+ * @returns {Promise<Object>} - The newly created book object.
+ * @throws {AppError} - If the user is not authenticated or any required fields are missing.
+ */
 export async function createBook(user, { planId, title, author, totalPages }) {
     if (!user) throw new AppError(401, 'Unauthorized');
     if (!planId || !title || totalPages === undefined) {

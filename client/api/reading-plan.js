@@ -1,6 +1,13 @@
 import db from '../db';
 import { AppError } from '../utils/errors';
 
+/**
+ * Retrieves a reading plan by book ID.
+ * @param {number} bookId - The ID of the book.
+ * @param {Object} user - The user object.
+ * @returns {Promise<Object>} - The reading plan object.
+ * @throws {AppError} - If the user is not authenticated or the reading plan does not exist.
+ */
 export async function getReadingPlan(bookId, user) {
     if (!user) throw new AppError(401, 'Unauthorized');
 
@@ -16,6 +23,13 @@ export async function getReadingPlan(bookId, user) {
     return readingPlan || null;
 }
 
+/**
+ * Deletes a reading plan by its ID.
+ * @param {number} readingPlanId - The ID of the reading plan to delete.
+ * @param {Object} user - The user object.
+ * @returns {Promise<Object>} - A success message.
+ * @throws {AppError} - If the user is not authenticated or the reading plan does not exist.
+ */
 export async function deleteReadingPlan(readingPlanId, user) {
     if (!user) throw new AppError(401, 'Unauthorized');
 
@@ -34,6 +48,14 @@ export async function deleteReadingPlan(readingPlanId, user) {
     return { message: 'Reading plan deleted successfully' };
 }
 
+/**
+ * Updates a reading plan's details.
+ * @param {number} readingPlanId - The ID of the reading plan to update.
+ * @param {Object} user - The user object.
+ * @param {Object} updates - The updates to apply to the reading plan.
+ * @returns {Promise<Object>} - The updated reading plan object.
+ * @throws {AppError} - If the user is not authenticated or any required fields are missing.
+ */
 export async function updateReadingPlan(readingPlanId, user, { hours, minutes, monday, tuesday, wednesday, thursday, friday, saturday, sunday }) {
     if (!user) throw new AppError(401, 'Unauthorized');
     if (hours === undefined || minutes === undefined) {
@@ -77,6 +99,13 @@ export async function updateReadingPlan(readingPlanId, user, { hours, minutes, m
     };
 }
 
+/**
+ * Creates a new reading plan.
+ * @param {Object} user - The user object.
+ * @param {Object} readingPlanData - The data for the new reading plan.
+ * @returns {Promise<Object>} - The newly created reading plan object.
+ * @throws {AppError} - If the user is not authenticated or any required fields are missing.
+ */
 export async function createReadingPlan(user, { bookId, hours, minutes, monday, tuesday, wednesday, thursday, friday, saturday, sunday }) {
     if (!user) throw new AppError(401, 'Unauthorized');
     if (!bookId || hours === undefined || minutes === undefined) {

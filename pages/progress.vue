@@ -44,7 +44,7 @@
             <button @click="toggleSection('studyPlans')"
                 class="w-full flex justify-between items-center bg-gray-100 dark:bg-gray-700 p-4 rounded-lg shadow-md hover:bg-gray-200 dark:hover:bg-gray-600 transition duration-200">
                 <h2 class="text-xl font-semibold dark:text-white">Study Plans ({{ completedPlans }}/{{ studyPlans.length
-                }})</h2>
+                    }})</h2>
                 <span class="text-gray-600 dark:text-gray-300 text-xl">{{ studyPlansOpen ? '−' : '+' }}</span>
             </button>
             <div v-if="studyPlansOpen" class="mt-4 space-y-4">
@@ -61,8 +61,8 @@
                     <p class="text-sm text-gray-600 dark:text-gray-300">{{ plan.description || 'No description' }}</p>
                     <p class="text-sm dark:text-white">
                         Progress: {{ planProgress(plan.planId) }}% (Books: {{ completedBooksInPlan(plan.planId) }}/{{
-                            booksInPlan(plan.planId) }}, Other: {{ completedOtherContentInPlan(plan.planId) }}/{{
-                            otherContentInPlan(plan.planId) }})
+                        booksInPlan(plan.planId) }}, Other: {{ completedOtherContentInPlan(plan.planId) }}/{{
+                        otherContentInPlan(plan.planId) }})
                     </p>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
                         <div :style="{ width: planProgress(plan.planId) + '%' }"
@@ -92,7 +92,7 @@
                     <p class="text-sm text-gray-600 dark:text-gray-300">Author: {{ book.author || 'Unknown' }}</p>
                     <p class="text-sm dark:text-white">
                         Pages: {{ book.currentPage || 0 }} / {{ book.totalPages }} ({{ bookProgress(book.currentPage,
-                            book.totalPages) }}%)
+                        book.totalPages) }}%)
                     </p>
                     <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
                         <div :style="{ width: bookProgress(book.currentPage, book.totalPages) + '%' }"
@@ -124,9 +124,7 @@
                     <h3 class="text-lg font-medium dark:text-white">{{ content.title }}</h3>
                     <p class="text-sm text-gray-600 dark:text-gray-300">Type: {{ content.otherType || 'N/A' }}</p>
                     <a v-if="content.link" :href="content.link" target="_blank"
-                        class="text-blue-500 hover:underline text-sm">
-                        View Content
-                    </a>
+                        class="text-blue-500 hover:underline text-sm">View Content</a>
                     <p class="text-sm dark:text-white">
                         Progress: {{ otherContentProgress(content.progressNote) }}%
                     </p>
@@ -143,9 +141,7 @@
         <div v-if="error" class="mt-6 p-4 bg-red-100 dark:bg-red-900 rounded-lg shadow-md text-center">
             <p class="text-red-700 dark:text-red-300 font-medium">{{ error }}</p>
             <button @click="retryLoad"
-                class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200">
-                Retry
-            </button>
+                class="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200">Retry</button>
         </div>
     </div>
 </template>

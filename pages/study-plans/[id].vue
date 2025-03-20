@@ -1,10 +1,14 @@
 <template>
     <div class="py-8 max-w-6xl mx-auto">
+        <!-- Logout Button -->
         <div class="flex justify-end mb-4">
             <button @click="logoutUser" class="text-red-500 hover:underline">Logout</button>
         </div>
+
+        <!-- Study Plan Details -->
         <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
             <div v-if="loading" class="space-y-6">
+                <!-- Loading Skeleton -->
                 <div class="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 animate-pulse"></div>
                 <div class="space-y-4">
                     <div class="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full animate-pulse"></div>
@@ -13,7 +17,10 @@
                 </div>
             </div>
             <div v-else>
+                <!-- Study Plan Title -->
                 <h1 class="text-3xl font-bold mb-6 dark:text-white">{{ studyPlan.title }}</h1>
+
+                <!-- Update Study Plan Form -->
                 <form @submit.prevent="updateExistingStudyPlan" class="space-y-6 mb-8">
                     <div>
                         <label for="title" class="block text-gray-700 dark:text-gray-300 font-medium mb-2">Title</label>
@@ -29,25 +36,28 @@
                             rows="4"></textarea>
                     </div>
                     <button type="submit"
-                        class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition duration-200">
-                        Update Study Plan
-                    </button>
+                        class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-4 rounded transition duration-200">Update
+                        Study Plan</button>
                 </form>
+
+                <!-- Error Message -->
                 <p v-if="error" class="text-red-500 mb-4">
                     {{ error }}
                     <button v-if="!isUnauthorized" @click="loadData" class="text-blue-500 underline ml-2">Retry</button>
                     <NuxtLink v-else to="/login" class="text-blue-500 underline ml-2">Login</NuxtLink>
                 </p>
 
+                <!-- Books Section -->
                 <h2 class="text-2xl font-bold mb-4 dark:text-white">Books</h2>
                 <ul class="mb-6 list-disc list-inside dark:text-white">
                     <li v-for="book in books" :key="book.bookId" class="mb-2">
                         {{ book.title }} by {{ book.author || 'Unknown' }} ({{ book.currentPage || 0 }} / {{
-                            book.totalPages }} pages)
+                        book.totalPages }} pages)
                     </li>
                     <li v-if="books.length === 0" class="text-gray-500 dark:text-gray-400">No books assigned.</li>
                 </ul>
 
+                <!-- Other Content Section -->
                 <h2 class="text-2xl font-bold mb-4 dark:text-white">Other Content</h2>
                 <ul class="mb-6 list-disc list-inside dark:text-white">
                     <li v-for="content in otherContent" :key="content.contentId" class="mb-2">
@@ -59,6 +69,7 @@
                         assigned.</li>
                 </ul>
 
+                <!-- Notes Section -->
                 <h2 class="text-2xl font-bold mb-4 dark:text-white">Notes</h2>
                 <ul class="list-disc list-inside dark:text-white">
                     <li v-for="note in notes" :key="note.noteId" class="mb-2" v-html="note.content"></li>

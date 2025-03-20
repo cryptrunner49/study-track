@@ -1,3 +1,9 @@
+/**
+ * Middleware to handle authentication.
+ * @param {Object} to - The route object.
+ * @param {Object} from - The navigation from object.
+ * @returns {void}
+ */
 export default defineNuxtRouteMiddleware((to, from) => {
     const userStore = useUserStore();
 

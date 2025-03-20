@@ -1,8 +1,11 @@
 <template>
     <div class="py-8 max-w-6xl mx-auto">
+        <!-- Page Title -->
         <h1 class="text-3xl font-bold mb-6 dark:text-white">Your Study Plans</h1>
 
+        <!-- Study Plans Table -->
         <div v-if="loading" class="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden mb-8">
+            <!-- Loading Skeleton -->
             <table class="w-full table-auto">
                 <thead>
                     <tr class="bg-gray-200 dark:bg-gray-700">
@@ -60,6 +63,7 @@
             </table>
         </div>
 
+        <!-- Create New Study Plan Form -->
         <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
             <h2 class="text-2xl font-bold mb-6 dark:text-white">Create a New Study Plan</h2>
             <form @submit.prevent="createNewStudyPlan" class="space-y-6">
@@ -77,9 +81,8 @@
                         rows="4"></textarea>
                 </div>
                 <button type="submit"
-                    class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-200">
-                    Create Study Plan
-                </button>
+                    class="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-200">Create
+                    Study Plan</button>
             </form>
             <p v-if="error" class="text-red-500 mt-4">
                 {{ error }}

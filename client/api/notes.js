@@ -1,6 +1,13 @@
 import db from '../db';
 import { AppError } from '../utils/errors';
 
+/**
+ * Deletes a note by its ID.
+ * @param {number} noteId - The ID of the note to delete.
+ * @param {Object} user - The user object.
+ * @returns {Promise<Object>} - A success message.
+ * @throws {AppError} - If the user is not authenticated or the note does not exist.
+ */
 export async function deleteNote(noteId, user) {
     if (!user) throw new AppError(401, 'Unauthorized');
 
@@ -26,6 +33,13 @@ export async function deleteNote(noteId, user) {
     return { message: 'Note deleted' };
 }
 
+/**
+ * Retrieves a note by its ID.
+ * @param {number} noteId - The ID of the note to retrieve.
+ * @param {Object} user - The user object.
+ * @returns {Promise<Object>} - The note object.
+ * @throws {AppError} - If the user is not authenticated or the note does not exist.
+ */
 export async function getNote(noteId, user) {
     if (!user) throw new AppError(401, 'Unauthorized');
 
@@ -50,6 +64,14 @@ export async function getNote(noteId, user) {
     return note;
 }
 
+/**
+ * Updates a note's details.
+ * @param {number} noteId - The ID of the note to update.
+ * @param {Object} user - The user object.
+ * @param {Object} updates - The updates to apply to the note.
+ * @returns {Promise<Object>} - The updated note object.
+ * @throws {AppError} - If the user is not authenticated or any required fields are missing.
+ */
 export async function updateNote(noteId, user, { content, planId, bookId, contentId }) {
     if (!user) throw new AppError(401, 'Unauthorized');
     if (!content || (!planId && !bookId && !contentId)) {
@@ -86,7 +108,14 @@ export async function updateNote(noteId, user, { content, planId, bookId, conten
     return { noteId, content, createdDate: note.createdDate, planId, bookId, contentId };
 }
 
-export async function getNotes(user, { planId, bookId, contentId }) {
+/**
+ * Retrieves all notes for a user, optionally filtered by plan, book, or content ID.
+ * @param {Object} user - The user object.
+ * @param {Object} [filters] - The filters to apply (planId, bookId, contentId).
+ * @returns {Promise<Array>} - An array of note objects.
+ * @throws {AppError} - If the user is not authenticated.
+ */
+export async function getNotes(user, { planId, bookId, contentId } = {}) {
     if (!user) throw new AppError(401, 'Unauthorized');
 
     let notes = await db.notes.toArray();
@@ -116,6 +145,13 @@ export async function getNotes(user, { planId, bookId, contentId }) {
     return filteredNotes;
 }
 
+/**
+ * Creates a new note.
+ * @param {Object} user - The user object.
+ * @param {Object} noteData - The data for the new note.
+ * @returns {Promise<Object>} - The newly created note object.
+ * @throws {AppError} - If the user is not authenticated or any required fields are missing.
+ */
 export async function createNote(user, { content, planId, bookId, contentId }) {
     if (!user) throw new AppError(401, 'Unauthorized');
     if (!content || (!planId && !bookId && !contentId)) {

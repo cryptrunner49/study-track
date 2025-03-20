@@ -5,16 +5,14 @@
       <nav class="container mx-auto px-4 py-4">
         <div class="flex items-center justify-between">
           <!-- Logo/Brand -->
-          <NuxtLink to="/" class="text-xl font-bold hover:text-blue-500 transition-colors duration-200">
-            StudyTrack
+          <NuxtLink to="/" class="text-xl font-bold hover:text-blue-500 transition-colors duration-200">StudyTrack
           </NuxtLink>
 
           <!-- Desktop Navigation -->
           <div class="hidden md:flex items-center space-x-8">
             <div class="flex space-x-6">
-              <NuxtLink v-for="link in navLinks" :key="link.to" :to="link.to" class="relative py-1 hover:text-blue-500 font-medium transition-colors duration-200 
-                after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-blue-500 
-                after:transition-all after:duration-300 hover:after:w-full">
+              <NuxtLink v-for="link in navLinks" :key="link.to" :to="link.to"
+                class="relative py-1 hover:text-blue-500 font-medium transition-colors duration-200 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-blue-500 after:transition-all after:duration-300 hover:after:w-full">
                 {{ link.text }}
               </NuxtLink>
             </div>
@@ -35,25 +33,19 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  <div v-if="showDropdown" class="absolute right-0 mt-3 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 
-         transform translate-y-1 scale-95 origin-top-right transition-all duration-150 ease-out 
-         border border-gray-200 dark:border-gray-700 z-50">
-                    <button @click="logout" class="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 
-           transition-colors duration-200">
-                      Logout
-                    </button>
+                  <div v-if="showDropdown"
+                    class="absolute right-0 mt-3 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl py-2 transform translate-y-1 scale-95 origin-top-right transition-all duration-150 ease-out border border-gray-200 dark:border-gray-700 z-50">
+                    <button @click="logout"
+                      class="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200">Logout</button>
                   </div>
                 </div>
               </template>
               <template v-else>
-                <NuxtLink to="/login" class="px-4 py-2 rounded-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 
-         hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-500 dark:hover:text-blue-400 
-         font-medium transition-colors duration-200">
-                  Login
-                </NuxtLink>
+                <NuxtLink to="/login"
+                  class="px-4 py-2 rounded-full bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-blue-500 dark:hover:text-blue-400 font-medium transition-colors duration-200">
+                  Login</NuxtLink>
                 <NuxtLink to="/register"
-                  class="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 font-medium">
-                  Register
+                  class="px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 font-medium">Register
                 </NuxtLink>
               </template>
             </div>

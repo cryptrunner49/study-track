@@ -3,25 +3,19 @@
         <form @submit.prevent="registerUser"
             class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md space-y-6"
             aria-labelledby="registerHeading">
-            <h1 id="registerHeading" class="text-3xl font-bold text-center dark:text-white">
-                Create Account
-            </h1>
+            <h1 id="registerHeading" class="text-3xl font-bold text-center dark:text-white">Create Account</h1>
 
             <div class="space-y-4">
                 <!-- Name Input -->
                 <div>
-                    <label for="name" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">
-                        Name
-                    </label>
+                    <label for="name" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">Name</label>
                     <input id="name" v-model="name" type="text" required placeholder="John Doe" autocomplete="name"
                         class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white" />
                 </div>
 
                 <!-- Email Input -->
                 <div>
-                    <label for="email" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">
-                        Email
-                    </label>
+                    <label for="email" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">Email</label>
                     <input id="email" v-model="email" type="email" required placeholder="you@example.com"
                         autocomplete="email"
                         class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white" />
@@ -29,9 +23,8 @@
 
                 <!-- Password Input -->
                 <div class="relative">
-                    <label for="password" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">
-                        Password
-                    </label>
+                    <label for="password"
+                        class="block text-gray-700 dark:text-gray-300 font-medium mb-1">Password</label>
                     <input :type="showPassword ? 'text' : 'password'" id="password" v-model="password" required
                         placeholder="••••••••" autocomplete="new-password"
                         class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
@@ -46,9 +39,8 @@
 
                 <!-- Confirm Password Input -->
                 <div class="relative">
-                    <label for="confirmPassword" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">
-                        Confirm Password
-                    </label>
+                    <label for="confirmPassword" class="block text-gray-700 dark:text-gray-300 font-medium mb-1">Confirm
+                        Password</label>
                     <input :type="showConfirmPassword ? 'text' : 'password'" id="confirmPassword"
                         v-model="confirmPassword" required placeholder="••••••••" autocomplete="new-password"
                         class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-500 dark:bg-gray-700 dark:text-white"
@@ -62,13 +54,14 @@
                 </div>
             </div>
 
+            <!-- Register Button -->
             <button type="submit"
-                class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-200">
-                Register
-            </button>
+                class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition duration-200">Register</button>
 
+            <!-- Error Message -->
             <p v-if="error" class="text-red-500 text-center mt-4">{{ error }}</p>
 
+            <!-- Login Link -->
             <p class="text-center text-sm text-gray-700 dark:text-gray-300">
                 Already have an account?
                 <a href="/login" class="text-green-500 hover:underline">Login</a>

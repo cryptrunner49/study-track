@@ -27,3 +27,4 @@ logs
 *.db-wal
 *.db
 *.db.bkp
+tmp/

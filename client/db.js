@@ -1,5 +1,8 @@
 import Dexie from 'dexie';
 
+/**
+ * StudyTrackDatabase class to manage the IndexedDB database.
+ */
 class StudyTrackDatabase extends Dexie {
     constructor() {
         super('StudyTrackDatabase');
