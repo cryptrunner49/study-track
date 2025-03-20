@@ -10,7 +10,7 @@ export default defineNuxtConfig({
     head: {
       link: [
         // SVG favicon
-        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'icon', type: 'image/svg+xml', href: '/study-track/favicon.svg' },
       ],
     }
   },
