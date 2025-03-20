@@ -5,11 +5,12 @@
       <nav class="container mx-auto px-4 py-4">
         <div class="flex items-center justify-between">
           <!-- Logo/Brand -->
-          <NuxtLink to="/" class="text-xl font-bold hover:text-blue-500 transition-colors duration-200">StudyTrack
+          <NuxtLink to="/" class="px-0 mr-6 text-xl font-bold hover:text-blue-500 transition-colors duration-200">
+            StudyTrack
           </NuxtLink>
 
           <!-- Desktop Navigation -->
-          <div class="hidden md:flex items-center space-x-8">
+          <div class="hidden min-[800px]:flex max-[799px]:hidden items-center space-x-8">
             <div class="flex space-x-6">
               <NuxtLink v-for="link in navLinks" :key="link.to" :to="link.to"
                 class="relative py-1 hover:text-blue-500 font-medium transition-colors duration-200 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-blue-500 after:transition-all after:duration-300 hover:after:w-full">
@@ -52,7 +53,7 @@
           </div>
 
           <!-- Mobile Menu Button -->
-          <button @click="toggleMobileMenu" class="md:hidden p-2">
+          <button @click="toggleMobileMenu" class="max-[799px]:block min-[800px]:hidden p-2">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path v-if="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M4 6h16M4 12h16M4 18h16" />
@@ -62,7 +63,8 @@
         </div>
 
         <!-- Mobile Navigation -->
-        <div v-if="mobileMenuOpen" class="md:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700">
+        <div v-if="mobileMenuOpen"
+          class="max-[799px]:block min-[800px]:hidden mt-4 pb-4 border-t border-gray-200 dark:border-gray-700">
           <div class="flex flex-col space-y-4">
             <NuxtLink v-for="link in navLinks" :key="link.to" :to="link.to" @click="mobileMenuOpen = false"
               class="py-2 hover:text-blue-500 font-medium">
