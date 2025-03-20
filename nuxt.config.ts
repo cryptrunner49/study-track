@@ -12,6 +12,7 @@ export default defineNuxtConfig({
         // SVG favicon
         { rel: 'icon', type: 'image/svg+xml', href: '/study-track/favicon.svg' },
       ],
+      title: "Study Track"
     }
   },
   vite: {
