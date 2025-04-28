@@ -64,7 +64,6 @@ Visit `http://localhost:3000` in your browser and start studying! 🎉
 ## 🎯 Roadmap
 
 - [ ] 📕 PDF reader integration with PDF.js
-- [ ] 🎧 eBook/audiobook platform sync
 - [ ] 🤖 AI-powered book chats & recommendations
 - [ ] 🌍 Social features for study communities
 
