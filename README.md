@@ -10,7 +10,7 @@ cd study-track
 sudo docker compose up
 ```
 
-Visit `http://localhost:3000` in your browser and start learning! 🎉
+Visit `http://localhost:3000` in your browser and start studying! 🎉
 
 ## 🌟 Features
 
