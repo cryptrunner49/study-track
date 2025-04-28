@@ -2,6 +2,8 @@
 
 Welcome to **StudyTrack**, your all-in-one companion for organizing reading and study goals! Whether you're a student 📖, a lifelong learner 🌱, or a book enthusiast 📘, StudyTrack helps you stay on top of your learning journey with ease and style.
 
+👉 **Website**: [https://cryptrunner49.github.io/study-track](https://cryptrunner49.github.io/study-track)
+
 ## Running on Docker
 
 ```bash
