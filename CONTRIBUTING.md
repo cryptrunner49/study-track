@@ -27,12 +27,6 @@ Thank you for your interest in contributing to StudyTrack! We welcome contributi
    - Add or update tests if applicable.
 
 5. **Test Your Changes**
-   Ensure everything works locally:
-
-   ```bash
-   php artisan test
-   composer run dev
-   ```
 
 6. **Commit Your Changes**
    Use clear commit messages:
@@ -53,7 +47,6 @@ Thank you for your interest in contributing to StudyTrack! We welcome contributi
 
 ## Guidelines
 
-- **Code Style**: phpfmt (vscode extension) for PHP and Prettier defaults for JavaScript/Vue.
 - **Scope**: Keep changes focused—small, single-purpose PRs are preferred.
 - **Issues**: Check the [Issues tab](https://github.com/cryptrunner49/study-track/issues) for tasks or report bugs.
 - **Respect**: Be kind and constructive in discussions.
