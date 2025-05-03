@@ -1,4 +1,4 @@
-# StudyTrack Web App 📚✨
+# StudyTrack Web App 📚
 
 Welcome to **StudyTrack**, your all-in-one companion for organizing reading and study goals! Whether you're a student 📖, a lifelong learner 🌱, or a book enthusiast 📘, StudyTrack helps you stay on top of your learning journey with ease and style.
 
