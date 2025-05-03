@@ -1,4 +1,4 @@
-# Contributing to StudyTrack 📚✨
+# Contributing to StudyTrack 📚
 
 Thank you for your interest in contributing to StudyTrack! We welcome contributions from the community to make this tool even better for learners and readers everywhere. Whether it's fixing bugs, adding features, or improving documentation, every bit helps! 🚀
 
@@ -23,7 +23,7 @@ Thank you for your interest in contributing to StudyTrack! We welcome contributi
 
 4. **Make Your Changes**
    - Write clean, readable code.
-   - Follow the existing coding style (e.g., Laravel and Vue.js conventions).
+   - Follow the existing coding style (e.g., Nuxt.js conventions).
    - Add or update tests if applicable.
 
 5. **Test Your Changes**
