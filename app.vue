@@ -11,7 +11,7 @@
 
           <!-- Desktop Navigation -->
           <div class="hidden min-[800px]:flex max-[799px]:hidden items-center space-x-8">
-            <div class="flex space-x-6">
+            <div v-if="user" class="flex space-x-6">
               <NuxtLink v-for="link in navLinks" :key="link.to" :to="link.to"
                 class="relative py-1 hover:text-blue-500 font-medium transition-colors duration-200 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[2px] after:bg-blue-500 after:transition-all after:duration-300 hover:after:w-full">
                 {{ link.text }}
